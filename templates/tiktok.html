@@ -1,0 +1,301 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    :root { 
+        --primary-yellow: #ffc107; 
+        --bg-black: #000000; 
+        --card-bg: #111111; 
+        --input-bg: #1a1a1a;
+        --border-muted: #222222;
+        --text-secondary: rgba(255, 255, 255, 0.5);
+        --text-white: #ffffff;
+    }
+    
+    /* Small, Clean Typography for Professional Look */
+    .smm-container {
+        font-family: 'Inter', -apple-system, system-ui, sans-serif;
+        font-size: 13px; /* Smaller base font */
+        color: var(--text-white);
+        max-width: 900px;
+        margin: 1rem auto;
+        padding: 0 10px;
+    }
+
+    .glass-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-muted);
+        border-radius: 12px;
+        padding: 1.2rem;
+    }
+
+    .section-header {
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        color: var(--primary-yellow);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        opacity: 0.9;
+    }
+    .section-header::after { content: ""; flex: 1; height: 1px; background: var(--border-muted); margin-left: 10px; }
+
+    /* Mobile-First Platform Selection */
+    .platform-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+        margin-bottom: 1.2rem;
+    }
+    @media (min-width: 768px) { .platform-grid { grid-template-columns: repeat(6, 1fr); } }
+
+    .platform-card {
+        background: var(--input-bg);
+        border: 1px solid var(--border-muted);
+        border-radius: 8px;
+        padding: 8px 4px;
+        text-align: center;
+        cursor: pointer;
+        transition: 0.2s ease;
+        color: var(--text-secondary);
+    }
+    .platform-card.active {
+        border-color: var(--primary-yellow);
+        background: rgba(255, 193, 7, 0.08);
+        color: var(--primary-yellow);
+    }
+    .platform-card i { font-size: 1.1rem; display: block; margin-bottom: 2px; }
+    .platform-card span { font-size: 0.65rem; font-weight: 600; }
+
+    /* Compact Form Controls */
+    .form-label { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; }
+    .form-control, .form-select {
+        background-color: var(--input-bg) !important;
+        border: 1px solid var(--border-muted) !important;
+        color: var(--text-white) !important;
+        padding: 8px 12px;
+        font-size: 0.85rem;
+        border-radius: 6px;
+    }
+    .form-control:focus { border-color: #444 !important; box-shadow: none !important; }
+
+    /* Summary & Price */
+    .summary-box {
+        background: #080808;
+        border: 1px solid var(--border-muted);
+        border-radius: 10px;
+        padding: 1rem;
+    }
+    .price-text { font-size: 1.8rem; font-weight: 900; color: var(--primary-yellow); line-height: 1; }
+
+    /* Captcha Fix */
+    .captcha-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--input-bg);
+        padding: 6px;
+        border-radius: 8px;
+        border: 1px solid var(--border-muted);
+    }
+    .captcha-img-container { background: white; border-radius: 4px; padding: 2px; height: 32px; cursor: pointer; }
+
+    .btn-wa {
+        background: #25D366;
+        color: white;
+        font-weight: 800;
+        border: none;
+        padding: 12px;
+        border-radius: 8px;
+        width: 100%;
+        margin-top: 10px;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        text-decoration: none;
+    }
+    
+    /* Floating Sidebar for Mobile */
+    @media (max-width: 991px) {
+        .sticky-summary { position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000; border-radius: 0; border-top: 1px solid var(--border-muted); }
+        .smm-container { padding-bottom: 120px; }
+    }
+</style>
+
+<div class="smm-container">
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="glass-card">
+                <div class="section-header">1. Platform</div>
+                <div class="platform-grid">
+                    {% for p in ['TikTok', 'Instagram', 'Facebook', 'YouTube', 'Twitter', 'Telegram'] %}
+                    <div class="platform-card {% if loop.first %}active{% endif %}" onclick="filterPlatform('{{ p }}', this)">
+                        <i class="bi bi-{{ p.lower() if p != 'YouTube' else 'play-btn' }}"></i>
+                        <span>{{ p }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="section-header">2. Service Details</div>
+                <div class="mb-2">
+                    <label class="form-label">Category</label>
+                    <select id="categorySelect" class="form-select">
+                        <option value="" disabled selected>Select Category</option>
+                        {% for category in grouped_services.keys() %}
+                            <option value="{{ category }}">{{ category }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Service</label>
+                    <select id="serviceSelect" class="form-select">
+                        <option value="" disabled selected>Select category first</option>
+                    </select>
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-12 col-md-8">
+                        <label class="form-label">Link / Profile URL</label>
+                        <input type="url" id="linkField" class="form-control" placeholder="https://..." required>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" id="qtyField" class="form-control" placeholder="Min: 100" required>
+                    </div>
+                </div>
+
+                <div class="section-header">3. Verification</div>
+                <div class="captcha-wrapper mb-3">
+                    <div class="captcha-img-container" onclick="refreshCaptcha()" title="Click to refresh">
+                        <img id="captcha-img" src="data:image/svg+xml;base64,{{ captcha_img }}" alt="captcha" style="height: 100%;">
+                    </div>
+                    <input type="text" id="captchaInput" class="form-control form-control-sm" placeholder="Verify Code">
+                </div>
+
+                <button class="btn-wa" onclick="validateAndSend()">
+                    <i class="bi bi-whatsapp"></i> SUBMIT TO WHATSAPP
+                </button>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="summary-box sticky-summary">
+                <div class="section-header">Order Summary</div>
+                <div class="d-flex justify-content-between align-items-end mb-3">
+                    <div>
+                        <span class="form-label d-block">Total Cost</span>
+                        <div id="displayTotal" class="price-text">0.00 <small style="font-size: 0.8rem;">PKR</small></div>
+                    </div>
+                    <div class="text-end">
+                        <span class="form-label d-block">My Balance</span>
+                        <span class="fw-bold text-success">{{ user_balance }} PKR</span>
+                    </div>
+                </div>
+                <div class="pt-2 border-top border-muted">
+                    <div class="d-flex justify-content-between">
+                        <span style="font-size: 0.7rem; color: var(--text-secondary);">User: {{ current_user.username }}</span>
+                        <span style="font-size: 0.7rem; color: var(--text-secondary);">ID: #{{ current_user.id }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<input type="hidden" id="csrf_token" value="{{ csrf_token() }}">
+
+<script>
+    const groupedServices = {{ grouped_services | tojson }};
+    const userName = "{{ current_user.username }}";
+
+    function filterPlatform(platform, el) {
+        document.querySelectorAll('.platform-card').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        const catSelect = document.getElementById('categorySelect');
+        catSelect.value = "";
+        Array.from(catSelect.options).forEach(opt => {
+            if (opt.value === "") return;
+            opt.style.display = opt.value.toLowerCase().includes(platform.toLowerCase()) ? 'block' : 'none';
+        });
+    }
+
+    document.getElementById('categorySelect').addEventListener('change', function() {
+        const services = groupedServices[this.value] || [];
+        const ss = document.getElementById('serviceSelect');
+        ss.innerHTML = '<option value="" disabled selected>Select service</option>';
+        services.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.rate_pkr;
+            opt.dataset.name = s.name;
+            opt.textContent = `${s.name} - ${s.rate_pkr} PKR`;
+            ss.appendChild(opt);
+        });
+    });
+
+    function calculate() {
+        const rate = parseFloat(document.getElementById('serviceSelect').value) || 0;
+        const qty = parseInt(document.getElementById('qtyField').value) || 0;
+        const total = (rate * qty) / 1000;
+        document.getElementById('displayTotal').innerHTML = `${total.toFixed(2)} <small style="font-size: 0.8rem;">PKR</small>`;
+    }
+
+    document.getElementById('qtyField').addEventListener('input', calculate);
+    document.getElementById('serviceSelect').addEventListener('change', calculate);
+
+    function refreshCaptcha() {
+        fetch('/get_captcha').then(r => r.json()).then(data => {
+            document.getElementById('captcha-img').src = 'data:image/svg+xml;base64,' + data.img;
+        });
+    }
+
+    async function validateAndSend() {
+        const captchaInput = document.getElementById('captchaInput').value;
+        const category = document.getElementById('categorySelect').value;
+        const service = document.getElementById('serviceSelect').selectedOptions[0]?.dataset.name;
+        const link = document.getElementById('linkField').value;
+        const qty = document.getElementById('qtyField').value;
+        const total = document.getElementById('displayTotal').innerText;
+        const csrfToken = document.getElementById('csrf_token').value;
+
+        if (!category || !service || !link || !qty || !captchaInput) {
+            return alert("Please fill all fields properly.");
+        }
+
+        const fd = new FormData();
+        fd.append('captcha_input', captchaInput);
+
+        try {
+            // FIX: Added X-CSRFToken header to avoid 400 Bad Request
+            const response = await fetch('/validate_order_captcha', { 
+                method: 'POST', 
+                headers: { 'X-CSRFToken': csrfToken },
+                body: fd 
+            });
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                const message = `*SMM ORDER*%0A` +
+                                `👤 *User:* ${userName}%0A` +
+                                `📂 *Cat:* ${category}%0A` +
+                                `📦 *Service:* ${service}%0A` +
+                                `🔗 *Link:* ${link}%0A` +
+                                `🔢 *Qty:* ${qty}%0A` +
+                                `💰 *Cost:* ${total}%0A` +
+                                `💳 *Wallet Balance:* {{ user_balance }} PKR`;
+
+                window.open(`https://wa.me/+923220788588?text=${message}`, '_blank');
+            } else {
+                alert(result.message);
+                refreshCaptcha();
+            }
+        } catch (e) {
+            alert("Error: Verification failed. Check connection.");
+        }
+    }
+</script>
+{% endblock %}

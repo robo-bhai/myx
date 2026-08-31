@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container text-center py-5">
+    <div class="card shadow-sm p-5 border-0">
+        <div class="mb-4">
+            <i class="fas fa-plug fa-4x text-warning mb-3"></i>
+            <h2 class="fw-bold">Connection Lost with Provider</h2>
+        </div>
+        <p class="text-muted">
+            We are having trouble reaching the service providers right now.<br>
+            Don't worry—your balance is safe. This is a temporary connection issue.
+        </p>
+        <div class="mt-4">
+            <a href="{{ url_for('new_order') }}" class="btn btn-primary btn-lg px-5">
+                <i class="fas fa-sync-alt"></i> Try Again
+            </a>
+        </div>
+        <p class="mt-3 small text-secondary">Error Code: API_DNS_RESOLUTION_FAILURE</p>
+    </div>
+</div>
+{% endblock %}

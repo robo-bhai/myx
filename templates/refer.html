@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+
+{% block title %}Refer & Earn | Dashboard{% endblock %}
+
+{% block content %}
+<style>
+    /* --- Page Specific Styles mapped to Base Theme --- */
+    :root {
+        --refer-primary: var(--primary-gold);
+        --refer-bg: var(--card-bg);
+        --refer-border: var(--glass-border);
+        --refer-text: var(--text-main);
+        --refer-muted: var(--text-muted);
+    }
+
+    .refer-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    /* Card Styling */
+    .refer-card {
+        background: var(--refer-bg);
+        border: 1px solid var(--refer-border);
+        border-radius: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .refer-header {
+        border-bottom: 1px solid var(--refer-border);
+        padding: 20px 25px;
+        background: rgba(255, 215, 0, 0.02);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .refer-body {
+        padding: 30px;
+    }
+
+    /* Typography */
+    h3, h5, h6 { color: var(--refer-primary); font-weight: 700; }
+    .text-main { color: var(--refer-text); }
+    .text-sub { color: var(--refer-muted); }
+    .text-highlight { color: var(--refer-primary); }
+
+    /* Input Group */
+    .refer-input {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--refer-border);
+        color: var(--refer-text);
+        border-radius: 12px 0 0 12px;
+        padding: 12px 15px;
+        font-family: monospace;
+    }
+    
+    /* Light mode input override */
+    [data-theme="light"] .refer-input {
+        background: #f8f9fa;
+        color: #000;
+    }
+
+    .refer-input:focus {
+        background: var(--refer-bg);
+        color: var(--refer-text);
+        border-color: var(--refer-primary);
+        outline: none;
+        box-shadow: none;
+    }
+
+    .btn-copy {
+        background: var(--refer-primary);
+        color: #000;
+        font-weight: 800;
+        border: none;
+        border-radius: 0 12px 12px 0;
+        padding: 0 25px;
+        transition: 0.2s;
+    }
+    .btn-copy:hover {
+        opacity: 0.9;
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+    }
+
+    /* Earnings Divider */
+    .earning-section {
+        border-left: 1px solid var(--refer-border);
+        padding-left: 2rem;
+    }
+
+    /* Steps Section */
+    .step-item {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 12px;
+        border: 1px solid transparent;
+        transition: 0.3s;
+    }
+    .step-item:hover {
+        border-color: var(--refer-border);
+        transform: translateY(-2px);
+    }
+
+    .step-badge {
+        width: 40px;
+        height: 40px;
+        background: var(--refer-primary);
+        color: #000;
+        font-weight: 800;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        flex-shrink: 0;
+        font-size: 1.1rem;
+    }
+
+    /* Table Styling */
+    .table-container {
+        overflow-x: auto;
+    }
+    .table-custom {
+        width: 100%;
+        margin-bottom: 0;
+        color: var(--refer-text);
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    .table-custom th {
+        border-bottom: 2px solid var(--refer-primary);
+        color: var(--refer-primary);
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 1px;
+        background: rgba(0,0,0,0.2);
+        padding: 15px;
+        font-weight: 700;
+    }
+    .table-custom td {
+        border-bottom: 1px solid var(--refer-border);
+        padding: 15px;
+        vertical-align: middle;
+        font-size: 0.9rem;
+    }
+    .table-custom tbody tr:hover {
+        background: rgba(255, 215, 0, 0.02);
+    }
+
+    /* Status Badges */
+    .status-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+    .badge-success { background: rgba(40, 167, 69, 0.2); color: #28a745; border: 1px solid #28a745; }
+    .badge-secondary { background: rgba(108, 117, 125, 0.2); color: #adb5bd; border: 1px solid #6c757d; }
+    
+    /* Animation */
+    .fade-in-up { animation: fadeInUp 0.5s ease-out; }
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 768px) {
+        .earning-section {
+            border-left: none;
+            border-top: 1px solid var(--refer-border);
+            padding-left: 0;
+            padding-top: 2rem;
+            margin-top: 2rem;
+        }
+        .step-item { margin-bottom: 10px; }
+    }
+</style>
+
+<div class="container py-4 refer-container fade-in-up">
+    
+    <div class="refer-card">
+        <div class="refer-header">
+            <h3 class="mb-0 fs-4"><i class="bi bi-people-fill me-2"></i>Refer & Earn</h3>
+        </div>
+        <div class="refer-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h5 class="mb-2">Your Unique Referral Link</h5>
+                    <p class="text-sub mb-4">Share this link with your friends. Earn real cash when they deposit!</p>
+                    
+                    <div class="input-group mb-3">
+                        <input type="text" id="referralLink" class="form-control refer-input" readonly value="{{ referral_link }}">
+                        <button class="btn btn-copy" onclick="copyReferral()">
+                            <i class="bi bi-copy me-2"></i> Copy
+                        </button>
+                    </div>
+                    
+                    <div id="copyMsg" class="text-success small fw-bold" style="display:none; animation: fadeIn 0.3s;">
+                        <i class="bi bi-check-circle-fill me-1"></i> Link copied to clipboard!
+                    </div>
+                </div>
+
+                <div class="col-md-4 text-center earning-section">
+                    <h6 class="text-sub text-uppercase small mb-2">Total Referral Earnings</h6>
+                    {% set total_bonus = namespace(value=0) %}
+                    {% for trans in current_user.transactions if trans.type == 'ref_bonus' %}
+                        {% set total_bonus.value = total_bonus.value + trans.amount %}
+                    {% endfor %}
+                    <h2 class="display-6 fw-bold text-highlight">PKR {{ "{:,.2f}".format(total_bonus.value) }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="refer-card">
+                <div class="refer-body">
+                    <h5 class="text-highlight border-bottom pb-3 mb-4" style="border-color: var(--refer-border) !important;">How It Works</h5>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="step-item">
+                                <div class="step-badge">1</div>
+                                <span class="text-main fw-bold">Share your unique link with friends.</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="step-item">
+                                <div class="step-badge">2</div>
+                                <span class="text-main fw-bold">Friend signs up & deposits funds.</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="step-item">
+                                <div class="step-badge">3</div>
+                                <span class="text-main fw-bold">You get <span class="text-highlight">5% Bonus</span> instantly!</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-sub small fst-italic">
+                        * Unlimited invites. Unlimited earnings. Bonuses are credited to your wallet automatically.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="refer-card">
+        <div class="refer-header">
+            <h5 class="mb-0">Your Referrals</h5>
+            {% set referrals = current_user.query.filter_by(referred_by=current_user.id).all() %}
+            <span class="badge bg-warning text-dark">{{ referrals|length }} Users</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-container">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Status</th>
+                            <th>Their Deposits</th>
+                            <th>Your 5% Share</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ref_user in referrals %}
+                        <tr>
+                            <td class="fw-bold">{{ ref_user.username }}</td>
+                            <td>
+                                {% set deposit_count = ref_user.deposit_requests|selectattr('status', 'equalto', 'approved')|list|length %}
+                                {% if deposit_count > 0 %}
+                                    <span class="status-badge badge-success">Active</span>
+                                {% else %}
+                                    <span class="status-badge badge-secondary">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% set their_total = namespace(amount=0) %}
+                                {% for dep in ref_user.deposit_requests if dep.status == 'approved' %}
+                                    {% set their_total.amount = their_total.amount + dep.amount %}
+                                {% endfor %}
+                                <span class="text-sub">PKR {{ "{:,.2f}".format(their_total.amount) }}</span>
+                            </td>
+                            <td class="text-highlight fw-bold">
+                                PKR {{ "{:,.2f}".format(their_total.amount * 0.05) }}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center py-5">
+                                <i class="bi bi-people text-sub fs-1 d-block mb-3"></i>
+                                <p class="text-sub">You haven't referred anyone yet.</p>
+                                <button class="btn btn-sm btn-outline-warning" onclick="copyReferral()">Copy Link & Start Earning</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function copyReferral() {
+        const link = document.getElementById("referralLink");
+        link.select();
+        link.setSelectionRange(0, 99999); // For mobile devices
+        
+        try {
+            navigator.clipboard.writeText(link.value).then(() => {
+                showSuccess();
+            }).catch(() => {
+                // Fallback for older browsers
+                document.execCommand("copy");
+                showSuccess();
+            });
+        } catch (err) {
+            console.error('Copy failed', err);
+        }
+    }
+
+    function showSuccess() {
+        const msg = document.getElementById("copyMsg");
+        msg.style.display = "block";
+        setTimeout(() => {
+            msg.style.display = "none";
+        }, 3000);
+    }
+</script>
+{% endblock %}

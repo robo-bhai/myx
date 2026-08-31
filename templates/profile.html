@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+{% block title %}Profile Settings | Secure Access{% endblock %}
+{% block content %}
+
+<style>
+  /* --- Local Overrides using Base Variables --- */
+  :root {
+    --profile-primary: var(--primary-gold);
+    --profile-bg: var(--card-bg);
+    --profile-text: var(--text-main);
+    --profile-border: var(--glass-border);
+    --profile-input-bg: rgba(255, 215, 0, 0.03);
+  }
+
+  /* Light Mode Specific Overrides */
+  [data-theme="light"] {
+    --profile-input-bg: #f8f9fa;
+  }
+
+  body {
+    /* Base.html handles main background */
+    color: var(--profile-text);
+    font-family: 'Inter', -apple-system, sans-serif;
+  }
+
+  /* --- Layout & Containers --- */
+  .profile-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 15px;
+    animation: fadeIn 0.5s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* --- Profile Header --- */
+  .profile-header-card {
+    background: var(--profile-bg);
+    border: 1px solid var(--profile-border);
+    border-radius: 20px;
+    padding: 2rem;
+    text-align: center;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    transition: background 0.3s ease, border-color 0.3s ease;
+  }
+
+  .avatar-circle {
+    width: 100px;
+    height: 100px;
+    border: 3px solid var(--profile-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--profile-primary);
+    background: rgba(255, 215, 0, 0.05);
+  }
+
+  /* --- Forms & Cards --- */
+  .settings-card {
+    background: var(--profile-bg);
+    border: 1px solid var(--profile-border);
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    transition: background 0.3s ease, border-color 0.3s ease;
+  }
+
+  .section-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid var(--profile-primary);
+    padding-left: 15px;
+    color: var(--profile-primary);
+  }
+
+  .form-label {
+    color: var(--profile-primary);
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .form-control {
+    background-color: var(--profile-input-bg) !important;
+    color: var(--profile-text) !important;
+    border: 1px solid var(--profile-border) !important;
+    border-radius: 10px;
+    padding: 12px 15px;
+    transition: all 0.3s ease;
+  }
+
+  .form-control:focus {
+    border-color: var(--profile-primary) !important;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+    outline: none;
+  }
+
+  .form-control::placeholder {
+    color: var(--text-muted);
+    opacity: 0.6;
+  }
+
+  /* --- Utility --- */
+  .info-tag {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 5px;
+  }
+
+  .alert {
+    background-color: var(--profile-bg);
+    border: 1px solid var(--profile-primary);
+    color: var(--profile-primary);
+    border-radius: 12px;
+  }
+
+  .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+  }
+  [data-theme="light"] .btn-close {
+    filter: none;
+  }
+
+  /* --- Buttons --- */
+  .btn-update {
+    background: var(--profile-primary);
+    color: #000 !important; /* Always black text on gold/orange */
+    border: none;
+    font-weight: 800;
+    padding: 15px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    width: 100%;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  }
+
+  .btn-update:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+  }
+
+  .security-notice {
+    background: rgba(255, 215, 0, 0.03);
+    border: 1px dashed var(--profile-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+  }
+  
+  /* Text specific overrides */
+  .text-sub { color: var(--text-muted); }
+</style>
+
+<div class="profile-container">
+  
+  <div class="profile-header-card">
+    <div class="avatar-circle">
+      {{ current_user.username[0].upper() }}
+    </div>
+    <h3 class="fw-bold mb-1">{{ current_user.name or current_user.username }}</h3>
+    <p class="mb-0 small text-uppercase fw-bold text-sub" style="letter-spacing: 2px;">
+      VIP Account
+    </p>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-dismissible fade show mb-4 shadow" role="alert">
+          <i class="bi bi-shield-check me-2"></i> {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="settings-card">
+      <div class="section-title">General Info</div>
+      
+      <div class="mb-4">
+        <label for="name" class="form-label">Full Name</label>
+        <input type="text" name="name" id="name" class="form-control" value="{{ current_user.name or '' }}" required>
+      </div>
+
+      <div class="mb-0">
+        <label for="email" class="form-label">Email Address</label>
+        <input type="email" name="email" id="email" class="form-control" value="{{ current_user.email or '' }}" required>
+      </div>
+    </div>
+
+    <div class="settings-card">
+      <div class="section-title">Access & Security</div>
+      
+      <div class="mb-4">
+        <label for="password" class="form-label">New Password</label>
+        <input type="password" name="password" id="password" class="form-control" minlength="8" placeholder="Leave blank to keep current">
+        <div class="info-tag"><i class="bi bi-info-circle me-1"></i>Minimum 8 characters required for new passwords.</div>
+      </div>
+
+      <div class="security-notice">
+        <label for="current_password" class="form-label">Current Password</label>
+        <input type="password" name="current_password" id="current_password" class="form-control mb-2" placeholder="Required to save any changes" required>
+        <div class="small fw-bold" style="color: var(--profile-primary); opacity: 0.9;">
+          <i class="bi bi-lock-fill me-1"></i> Verification is required to update your profile data.
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-5">
+      <button type="submit" class="btn-update shadow-lg">
+        Update Profile Settings
+      </button>
+    </div>
+  </form>
+
+</div>
+
+<script>
+  // Soft interaction feedback
+  document.querySelector('.btn-update').addEventListener('mousedown', function() {
+    this.style.transform = 'scale(0.98)';
+  });
+  document.querySelector('.btn-update').addEventListener('mouseup', function() {
+    this.style.transform = 'scale(1)';
+  });
+</script>
+
+{% endblock %}

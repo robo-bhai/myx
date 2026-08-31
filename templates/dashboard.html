@@ -1,0 +1,427 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard | {{ user.username }}{% endblock %}
+
+{% block content %}
+<style>
+  /* --- Professional UI Enhancements --- */
+  .dashboard-container {
+    animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* --- Strict Branding Color Enforcement --- */
+  .main-text, h2, h5, .fw-bold, .stat-value, .action-btn span { 
+    color: var(--text-main) !important; 
+  }
+
+  .brand-text, .text-warning, .stat-card i, .action-btn i, .trial-glow, 
+  .streak-day-circle.completed, .streak-day-circle.active i {
+    color: var(--primary-gold) !important;
+  }
+
+  .muted-text, .stat-label, .text-muted, .small {
+    color: var(--text-muted) !important;
+    opacity: 0.9;
+  }
+
+  /* --- Modern Stat Cards --- */
+  .stat-card {
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    padding: 24px;
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-8px);
+    border-color: var(--primary-gold);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+  }
+
+  .stat-card i {
+    font-size: 2.2rem;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+  }
+
+  .stat-value {
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin-top: 4px;
+  }
+
+  /* --- Refined 7-Day Streak Widget --- */
+  .streak-container {
+    background: var(--card-bg);
+    border: 1px solid var(--primary-gold);
+    border-radius: 28px;
+    padding: 28px;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  }
+
+  .streak-day-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1rem;
+    background: rgba(255,255,255,0.03);
+    border: 2px solid var(--glass-border);
+    transition: all 0.3s ease;
+  }
+
+  .streak-day-circle.active {
+    background: var(--primary-gold);
+    color: #000 !important;
+    transform: scale(1.1);
+    box-shadow: 0 0 20px var(--primary-gold);
+    border-color: var(--primary-gold);
+  }
+
+  .streak-day-circle.completed {
+    border-color: var(--primary-gold);
+    background: rgba(255, 215, 0, 0.05);
+  }
+
+  .claim-input {
+    background: rgba(255,255,255,0.05) !important;
+    border: 2px solid var(--glass-border) !important;
+    color: var(--text-main) !important;
+    border-radius: 16px !important;
+    padding: 14px !important;
+  }
+
+  .claim-input:focus {
+    border-color: var(--primary-gold) !important;
+    box-shadow: none !important;
+  }
+
+  .claimed-badge {
+    background: rgba(255, 215, 0, 0.1);
+    border: 1px dashed var(--primary-gold);
+    color: var(--primary-gold);
+    border-radius: 16px;
+    padding: 16px;
+    text-align: center;
+    font-weight: 700;
+  }
+
+  /* --- Grid Action Buttons --- */
+  .action-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 20px;
+    text-align: center;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 110px;
+  }
+
+  .action-btn:hover {
+    background: var(--primary-gold);
+    border-color: var(--primary-gold);
+    transform: scale(1.05);
+  }
+
+  .action-btn:hover i, .action-btn:hover span { 
+    color: #000000 !important; 
+    font-weight: 700; 
+  }
+
+  .trial-glow {
+    animation: glowPulse 2s infinite;
+  }
+
+  @keyframes glowPulse {
+    0% { filter: drop-shadow(0 0 2px var(--primary-gold)); }
+    50% { filter: drop-shadow(0 0 10px var(--primary-gold)); }
+    100% { filter: drop-shadow(0 0 2px var(--primary-gold)); }
+  }
+
+  /* --- Verified Install Section Theme Logic --- */
+  .install-banner {
+    border-radius: 24px;
+    padding: 16px 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+  }
+
+  /* Light Mode Styles: Extra light pink blurry transparent */
+  [data-theme="light"] .install-banner {
+    background: rgba(255, 192, 203, 0.25);
+  }
+
+  /* Dark Mode Styles: Transparent black */
+  .install-banner {
+    background: rgba(0, 0, 0, 0.4);
+  }
+
+  .install-banner:active {
+    transform: scale(0.98);
+  }
+
+  .verified-badge {
+    background: #00875f;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  @media (max-width: 768px) {
+    .stat-card { padding: 18px; }
+    .stat-value { font-size: 1.3rem; }
+    .streak-day-circle { width: 40px; height: 40px; font-size: 0.85rem; border-radius: 12px; }
+  }
+</style>
+
+<div class="dashboard-container container-fluid px-0">
+  
+  <div class="welcome-section">
+    <div class="row align-items-center">
+      <div class="col-8">
+        <h2 class="fw-bold mb-1">Hello, {{ user.name or user.username }} 👋</h2>
+        <p class="muted-text small">Performance Overview & Management</p>
+      </div>
+      <div class="col-4 text-end">
+        <span class="muted-text small fw-bold">USER ID: {{ user.uid }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+      <div class="stat-card">
+        <i class="bi bi-wallet2"></i>
+        <div class="stat-label">Your Wallet</div>
+        <div class="stat-value">Rs {{ "{:,.2f}".format(user.balance) }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card">
+        <i class="bi bi-lightning-charge"></i>
+        <div class="stat-label">Total Activity</div>
+        <div class="stat-value">{{ orders|length }} Orders</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card">
+        <i class="bi bi-arrow-left-right"></i>
+        <div class="stat-label">Operations</div>
+        <div class="stat-value">{{ transactions|length }} Records</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card">
+        <i class="bi bi-patch-check"></i>
+        <div class="stat-label">Membership</div>
+        <div class="stat-value brand-text">
+          {% if user.is_admin %}
+            <span class="trial-glow">VIP Admin</span>
+          {% elif user.sub_plan == 'pro' and user.is_sub_active %}
+            <span class="trial-glow">👑 Pro Member</span>
+          {% else %}
+            Premium User
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="streak-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h5 class="fw-bold m-0 brand-text"><i class="bi bi-fire me-2"></i>Engagement Streak</h5>
+        <p class="muted-text small m-0">Claim free daily rewards. Current: {{ user.streak_count }} Days</p>
+      </div>
+      {% if user.is_sub_active %}
+      <div class="text-end">
+        <span class="badge bg-warning text-dark px-3 py-2 rounded-pill small fw-bold d-block mb-1">
+          <i class="bi bi-stars"></i> +1.2% BONUS ACTIVE
+        </span>
+        {% if user.sub_plan == 'pro' and user.sub_expiry %}
+          <small class="brand-text fw-bold" style="font-size: 0.7rem;">
+            VALID UNTIL: {{ user.sub_expiry.strftime('%d %b') }}
+          </small>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="d-flex justify-content-between mb-4 px-1">
+      {% for i in range(1, 8) %}
+      <div class="text-center">
+        <div class="streak-day-circle 
+          {% if user.streak_count >= i %}completed{% endif %} 
+          {% if user.streak_count + 1 == i and not (user.last_checkin and user.last_checkin.strftime('%Y-%m-%d') == None) %}active{% endif %}">
+          {% if user.streak_count >= i %}<i class="bi bi-check-lg brand-text"></i>{% else %}{{ i }}{% endif %}
+        </div>
+        <div class="extra-small mt-2 {% if user.streak_count + 1 == i %}brand-text fw-bold{% else %}muted-text{% endif %}" style="font-size: 0.65rem;">
+          DAY {{ i }}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if user.last_checkin and user.last_checkin.strftime('%Y-%m-%d') == user.last_checkin.utcnow().strftime('%Y-%m-%d') %}
+    <div class="claimed-badge">
+      <i class="bi bi-check-circle-fill me-2"></i> Daily reward already claimed. Your streak is safe!
+    </div>
+    {% else %}
+    <form action="{{ url_for('claim_daily') }}" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="row g-2">
+        <div class="col-md-9">
+          <input type="text" name="tiktok_link" required placeholder="Enter TikTok Link for Reward..." class="form-control claim-input">
+        </div>
+        <div class="col-md-3">
+          <button type="submit" class="btn btn-warning w-100 fw-bold shadow py-3">Claim Now</button>
+        </div>
+      </div>
+    </form>
+    {% endif %}
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-12"><h5 class="fw-bold mb-3 brand-text">Command Center</h5></div>
+
+    <div class="col-4">
+      <a href="{{ url_for('new_order') }}" class="action-btn">
+        <i class="bi bi-plus-circle-dotted fs-3 mb-2"></i>
+        <span class="small fw-bold">New Order</span>
+      </a>
+    </div>
+
+    <div class="col-4">
+      <a href="{{ url_for('wallet') }}" class="action-btn">
+        <i class="bi bi-plus-lg fs-3 mb-2"></i>
+        <span class="small fw-bold">Add Funds</span>
+      </a>
+    </div>
+
+    <div class="col-4">
+      <a href="{{ url_for('status') }}" class="action-btn">
+        <i class="bi bi-activity fs-3 mb-2"></i>
+        <span class="small fw-bold">Live Status</span>
+      </a>
+    </div>
+
+    <div class="col-4">
+      <a href="{{ url_for('refer') }}" class="action-btn">
+        <i class="bi bi-award fs-3 mb-2"></i>
+        <span class="small fw-bold">Affiliate</span>
+      </a>
+    </div>
+
+    <div class="col-4">
+      <a href="{{ url_for('profile') }}" class="action-btn">
+        <i class="bi bi-sliders2 fs-3 mb-2"></i>
+        <span class="small fw-bold">Settings</span>
+      </a>
+    </div>
+
+    <div class="col-4">
+      <a href="/freetrial" class="action-btn">
+        <i class="bi bi-gift fs-3 mb-2"></i>
+        <span class="small fw-bold">Free Trial</span>
+      </a>
+    </div>
+
+    <div class="col-4">
+      <a href="/subscribe" class="action-btn">
+        <i class="bi bi-gem fs-3 mb-2"></i>
+        <span class="small fw-bold">Pro Plans</span>
+      </a>
+    </div>
+
+    <div class="col-4">
+      <a href="/streak" class="action-btn">
+        <i class="bi bi-calendar3 fs-3 mb-2"></i>
+        <span class="small fw-bold">Rewards</span>
+      </a>
+    </div>
+
+    <div class="col-4">
+      <a href="{{ url_for('logout') }}" class="action-btn" style="border-color: rgba(220, 53, 69, 0.4);">
+        <i class="bi bi-power fs-3 mb-2 text-danger"></i>
+        <span class="small fw-bold text-danger">Log Out</span>
+      </a>
+    </div>
+  </div>
+
+  <div id="pwa-install-row" class="row mb-5" style="display: none;">
+    <div class="col-12">
+      <div id="installAppBtn" class="install-banner d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-3">
+          <img src="/static/Icons/Icon-192x192.png" width="52" height="52" class="rounded-3 shadow" alt="Hadi88 Logo">
+          <div>
+            <div class="fw-bold main-text mb-0" style="font-size: 0.95rem;">Hadi88 Premium Panel</div>
+            <div class="verified-badge">
+              <i class="bi bi-patch-check-fill"></i> Play Store Verified
+            </div>
+          </div>
+        </div>
+        <div class="text-end">
+           <i class="bi bi-download brand-text fs-4"></i>
+           <div class="small muted-text fw-bold" style="font-size: 0.6rem;">INSTALL APK</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // PWA Install Prompt Logic
+  let deferredPrompt;
+  const installRow = document.getElementById('pwa-install-row');
+  const installBtn = document.getElementById('installAppBtn');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    installRow.style.display = 'block';
+  });
+
+  installBtn.addEventListener('click', async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        installRow.style.display = 'none';
+      }
+      deferredPrompt = null;
+    }
+  });
+</script>
+{% endblock %}

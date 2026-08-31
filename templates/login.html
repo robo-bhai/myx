@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+{% block title %}Login | Access Your Growth Engine{% endblock %}
+{% block content %}
+<style>
+  /* --- Local Overrides using Base Variables --- */
+  :root {
+    --login-primary: var(--primary-gold);
+    --login-bg: var(--card-bg);
+    --login-text: var(--text-main);
+    --login-border: var(--glass-border);
+    --login-input-bg: rgba(255, 215, 0, 0.03);
+    --login-badge-bg: linear-gradient(135deg, var(--primary-gold) 0%, #e0a800 100%);
+  }
+
+  /* Light Mode Specific Overrides */
+  [data-theme="light"] {
+    --login-input-bg: #f8f9fa;
+    --login-badge-bg: linear-gradient(135deg, #FFD700 0%, #ccac00 100%);
+  }
+
+  body {
+    /* Background handled by base.html */
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Strict Font Color Enforcement for Light/Dark Mode Branding */
+  .main-heading, .sub-heading, .form-label, .form-control, .promo-text, .small-text, .trust-item {
+      color: var(--text-main) !important;
+  }
+
+  /* Primary Branding Font Colors (Yellow/Orange) */
+  .trust-icon, .btn-register-outline, .captcha-refresh-btn, .hero-badge-text {
+      color: var(--primary-gold) !important;
+  }
+
+  /* --- Main Card Container --- */
+  .login-wrapper {
+    max-width: 480px;
+    width: 95%;
+    margin: 3rem auto;
+    position: relative;
+    z-index: 10;
+  }
+
+  .form-container {
+    background: var(--login-bg);
+    backdrop-filter: blur(10px);
+    padding: 2.5rem 2rem;
+    border-radius: 1.5rem;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2), 
+                0 0 0 1px var(--login-border);
+    position: relative;
+    overflow: hidden;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  /* Decorative Glow at top of card */
+  .form-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, var(--login-primary), transparent);
+    opacity: 0.8;
+  }
+
+  /* --- Marketing Hooks --- */
+  .hero-badge {
+    background: var(--login-badge-bg);
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    padding: 6px 16px;
+    border-radius: 50px;
+    display: inline-block;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+    animation: pulseBadge 2s infinite;
+  }
+  
+  /* Text on badge follows branding: Black on Yellow (Dark) or Black on Orange (Light) */
+  .hero-badge {
+      color: #000 !important;
+  }
+
+  @keyframes pulseBadge {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); }
+    70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
+  }
+
+  .main-heading {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+  }
+
+  .sub-heading {
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+  }
+
+  /* --- Form Styling --- */
+  .form-group {
+    margin-bottom: 1.25rem;
+    position: relative;
+  }
+
+  .form-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+
+  .form-control {
+    background-color: var(--login-input-bg);
+    border: 1px solid var(--login-border);
+    padding: 1rem;
+    border-radius: 10px;
+    font-size: 1rem;
+    width: 100%;
+    transition: all 0.3s ease;
+  }
+
+  .form-control::placeholder {
+    color: var(--text-main);
+    font-weight: 400;
+    opacity: 0.6;
+  }
+
+  .form-control:focus {
+    background-color: var(--login-bg);
+    border-color: var(--login-primary);
+    box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.1);
+    outline: none;
+  }
+
+  /* --- Captcha Styling --- */
+  .captcha-container {
+    background: var(--login-input-bg);
+    border: 1px solid var(--login-border);
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .captcha-visual {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .captcha-img-box {
+    background: #fff; /* Always white for captcha visibility */
+    flex-grow: 1;
+    border-radius: 6px;
+    border: 1px dashed var(--login-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    min-height: 50px;
+    transition: border-color 0.3s;
+  }
+  .captcha-img-box:hover {
+    border-color: var(--login-primary);
+  }
+
+  .captcha-refresh-btn {
+    background: var(--login-bg);
+    border: 1px solid var(--login-border);
+    padding: 0 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.2s;
+  }
+  .captcha-refresh-btn:hover {
+    background: var(--login-border);
+    transform: rotate(180deg);
+  }
+
+  /* --- Buttons --- */
+  .btn-login {
+    background: linear-gradient(90deg, var(--login-primary), #ffdb58);
+    color: #000 !important; /* Black text for best contrast on gold/yellow */
+    border: none;
+    width: 100%;
+    padding: 1rem;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    margin-top: 1rem;
+    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.2);
+    transition: all 0.3s ease;
+  }
+
+  .btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 193, 7, 0.4);
+    opacity: 0.9;
+  }
+
+  /* --- Footer / Conversion --- */
+  .register-promo {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--login-border);
+    text-align: center;
+  }
+
+  .promo-text {
+    font-size: 0.9rem;
+    margin-bottom: 0.8rem;
+  }
+  
+  .small-text {
+      font-size: 0.85rem;
+  }
+
+  .btn-register-outline {
+    display: inline-block;
+    border: 1px solid var(--login-primary);
+    padding: 0.6rem 1.2rem;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+  }
+
+  .btn-register-outline:hover {
+    background: var(--login-primary);
+    color: #000 !important;
+  }
+
+  /* --- Trust Signals --- */
+  .trust-strip {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 1.5rem;
+    font-size: 0.75rem;
+  }
+  .trust-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  @media (max-width: 576px) {
+    .login-wrapper { margin-top: 1rem; }
+    .form-container { padding: 1.5rem; }
+  }
+</style>
+
+<div class="login-wrapper">
+    <div class="form-container">
+        
+        <div class="text-center">
+            <div class="hero-badge">
+                🎁 Free 100 Followers on Signup
+            </div>
+            
+            <h1 class="main-heading">Hadi88</h1>
+            <p class="sub-heading">Secure access to the world's #1 social growth engine. Instant delivery. Real results.</p>
+            
+            <div class="trust-strip">
+                <span class="trust-item"><span class="trust-icon">✔</span> Active Users</span>
+                <span class="trust-item"><span class="trust-icon">🔒</span> SSL Secured</span>
+                <span class="trust-item"><span class="trust-icon">⚡</span> Instant Boost</span>
+            </div>
+        </div>
+        
+        <form method="post" class="form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="form-group">
+                <label class="form-label">Username</label>
+                <input class="form-control" type="text" name="username" placeholder="Username" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input class="form-control" type="password" name="password" placeholder="••••••••" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Security Verification 🛡️</label>
+                <div class="captcha-container">
+                    <div class="captcha-visual">
+                        <div class="captcha-img-box" onclick="refreshCaptcha()" title="Click to refresh">
+                            <img id="captcha-img" src="data:image/svg+xml;base64,{{ captcha_img }}" alt="captcha" style="max-height: 40px; filter: drop-shadow(0 0 2px var(--login-primary));">
+                        </div>
+                        <button type="button" class="captcha-refresh-btn" onclick="refreshCaptcha()">↺</button>
+                    </div>
+                    <input type="text" name="captcha_input" class="form-control" placeholder="Type the code from the image" required autocomplete="off" style="padding: 0.8rem;">
+                </div>
+            </div>
+
+            <button class="btn-login" type="submit">
+                Log In & Boost 🚀
+            </button>
+        </form>
+        
+        <div class="register-promo">
+            <p class="promo-text">Don't have an account yet?</p>
+            <div class="d-grid gap-2">
+                <p class="small-text mb-2">Join today and claim your trial balance instantly. No credit card needed.</p>
+                <a href="{{ url_for('register') }}" class="btn-register-outline">
+                    Create Free Account &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="text-center mt-4">
+        <p class="small-text" style="font-size: 0.75rem; opacity: 0.8;">
+            By logging in, you agree to our Terms of Service. <br>System Status: <span style="color: #4caf50;">● Operational</span>
+        </p>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+function refreshCaptcha() {
+    // Add a spin effect to the button on click
+    const btn = document.querySelector('.captcha-refresh-btn');
+    if(btn) {
+        btn.style.transform = 'rotate(360deg)';
+        setTimeout(() => { btn.style.transform = 'rotate(0deg)'; }, 300);
+    }
+
+    $.get('/get_captcha', function(data) {
+        $('#captcha-img').attr('src', 'data:image/svg+xml;base64,' + data.img);
+        $('input[name="captcha_input"]').val('');
+    });
+}
+</script>
+{% endblock %}

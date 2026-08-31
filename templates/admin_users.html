@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Admin | User Protocol{% endblock %}
+
+{% block content %}
+<style>
+    body { background-color: #000000; color: #facc15; font-family: 'Inter', sans-serif; }
+    
+    /* Transparent Glass Effect for Cards */
+    .admin-card { 
+        background-color: rgba(17, 17, 17, 0.4); 
+        border: 1px solid #333333; 
+        border-radius: 12px; 
+        backdrop-filter: blur(10px);
+        transition: 0.3s;
+    }
+    .admin-card:hover { border-color: #facc15; }
+
+    /* Button Styling */
+    .btn-yellow { 
+        background-color: #facc15; 
+        color: #000000; 
+        font-weight: bold; 
+        border-radius: 8px; 
+        transition: 0.2s; 
+    }
+    .btn-yellow:hover { 
+        background-color: #ffffff; 
+        transform: translateY(-2px); 
+    }
+
+    /* Table Customization */
+    .table-transparent { background: transparent; }
+    .table-row { border-bottom: 1px solid rgba(255, 255, 255, 0.05); transition: 0.2s; }
+    .table-row:hover { background-color: rgba(250, 204, 21, 0.05); }
+
+    /* Input/Field Transparency */
+    input, select, textarea {
+        background-color: rgba(0, 0, 0, 0.3) !important;
+        border: 1px solid #333 !important;
+        color: white !important;
+    }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #000; }
+    ::-webkit-scrollbar-thumb { background: #facc15; border-radius: 10px; }
+</style>
+
+<div class="p-4 md:p-8">
+    <header class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+        <div>
+            <h1 class="text-3xl font-extrabold tracking-tight uppercase">User <span class="text-white">Registry</span></h1>
+            <p class="text-gray-500 text-sm mt-1 uppercase tracking-widest">/hadi_path/users - Access Control List</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="{{ url_for('hadi_dashboard') }}" class="btn-yellow px-6 py-2 flex items-center gap-2">
+                <i class="fas fa-shield-alt"></i> Command Center
+            </a>
+        </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="mb-6 p-4 rounded-lg border {% if category == 'danger' %}border-red-500 text-red-500 bg-red-500/10{% else %}border-yellow-500 text-yellow-500 bg-yellow-500/10{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="admin-card overflow-hidden">
+        <div class="p-6 border-b border-gray-800 flex justify-between items-center">
+            <h3 class="font-bold text-xl uppercase italic text-white">Active Database Entities</h3>
+            <span class="text-[10px] text-yellow-500 tracking-tighter bg-yellow-500/10 px-2 py-1 rounded">SECURE SESSION</span>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm table-transparent">
+                <thead class="bg-black/60 text-yellow-500 uppercase text-xs">
+                    <tr>
+                        <th class="p-4">UID</th>
+                        <th class="p-4">Identity</th>
+                        <th class="p-4">Credentials</th>
+                        <th class="p-4">Financials</th>
+                        <th class="p-4">Privilege</th>
+                        <th class="p-4 text-right">Operations</th>
+                    </tr>
+                </thead>
+                <tbody class="text-white">
+                    {% for user in users %}
+                    <tr class="table-row">
+                        <td class="p-4 font-mono text-gray-500 text-xs">#00{{ user.id }}</td>
+                        <td class="p-4">
+                            <div class="font-bold text-white">{{ user.name }}</div>
+                            <div class="text-[10px] text-yellow-600 uppercase">@{{ user.username }}</div>
+                        </td>
+                        <td class="p-4 text-gray-400 text-xs">{{ user.email }}</td>
+                        <td class="p-4 font-mono text-yellow-400">
+                            Rs. {{ "{:,.2f}".format(user.balance) }}
+                        </td>
+                        <td class="p-4">
+                            {% if user.is_admin %}
+                            <span class="px-2 py-1 bg-yellow-500 text-black text-[9px] font-black uppercase rounded">Administrator</span>
+                            {% else %}
+                            <span class="px-2 py-1 border border-gray-700 text-gray-500 text-[9px] font-bold uppercase rounded">End User</span>
+                            {% endif %}
+                        </td>
+                        <td class="p-4 text-right">
+                            <div class="flex justify-end gap-3">
+                                <a href="{{ url_for('edit_user', user_id=user.id) }}" class="text-white hover:text-yellow-400 transition">
+                                    <i class="fas fa-user-cog"></i>
+                                </a>
+                                
+                                <form method="POST" action="{{ url_for('delete_user', user_id=user.id) }}" class="inline" onsubmit="return confirm('WARNING: Terminate user session @{{ user.username }} permanently?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="text-red-500/50 hover:text-red-500 transition">
+                                        <i class="fas fa-terminal"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <footer class="mt-12 text-center text-gray-600 text-[10px] uppercase tracking-widest">
+        &copy; 2026 Admin Intelligence Unit | Database Encryption: AES-256-GCM
+    </footer>
+</div>
+{% endblock %}

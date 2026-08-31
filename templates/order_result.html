@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Order Result{% endblock %}
+{% block content %}
+<h2>Order Placed</h2>
+<pre>{{ result | tojson(indent=2) }}</pre>
+<a class="btn btn-link" href="{{ url_for('new_order') }}">Place another order</a>
+{% endblock %}

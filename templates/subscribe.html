@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* --- Local Overrides using Base Variables --- */
+    :root {
+        --sub-primary: var(--primary-gold);
+        --sub-bg: var(--card-bg);
+        --sub-text: var(--text-main);
+        --sub-border: var(--glass-border);
+        --sub-backdrop: rgba(0, 0, 0, 0.6);
+    }
+    
+    /* Light Mode overrides for specific transparency needs */
+    [data-theme="light"] {
+        --sub-backdrop: rgba(255, 255, 255, 0.6);
+    }
+
+    .sub-wrapper {
+        min-height: 80vh;
+        padding: 50px 0;
+    }
+
+    .sub-container {
+        background: var(--sub-bg);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid var(--sub-border);
+        border-radius: 20px;
+        padding: 60px 30px;
+        color: var(--sub-text);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    }
+
+    .text-theme-primary { color: var(--sub-primary) !important; }
+    
+    /* Headings & Bold Text adapt to theme primary color */
+    h1, h2, h3, b, strong { color: var(--sub-primary); }
+    
+    .text-normal { color: var(--text-muted); opacity: 0.9; }
+
+    .plan-card {
+        background: var(--sub-bg);
+        border: 1px solid var(--sub-border);
+        border-radius: 16px;
+        padding: 35px 25px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .plan-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--sub-primary);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+    }
+
+    /* Active Plan Highlight */
+    .active-plan-card {
+        border: 2px solid var(--sub-primary) !important;
+        background: rgba(255, 215, 0, 0.05) !important; /* Yellow tint works for both modes generally, or use var(--nav-active-bg) */
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);
+    }
+
+    .status-badge {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: var(--sub-primary);
+        color: #000;
+        font-size: 0.65rem;
+        font-weight: 800;
+        padding: 2px 10px;
+        border-radius: 5px;
+        text-transform: uppercase;
+    }
+
+    .days-left {
+        font-size: 0.85rem;
+        color: var(--sub-text);
+        background: rgba(128, 128, 128, 0.1);
+        padding: 5px 12px;
+        border-radius: 20px;
+        display: inline-block;
+        margin-bottom: 15px;
+        border: 1px solid var(--sub-border);
+    }
+
+    /* Price Text */
+    .price-display {
+        color: var(--sub-text);
+        margin-bottom: 1.5rem;
+        font-weight: 700;
+    }
+
+    .btn-sub-action {
+        width: 100%;
+        padding: 12px;
+        font-weight: 700;
+        border-radius: 8px;
+        text-transform: uppercase;
+        border: none;
+        transition: 0.3s ease;
+        cursor: pointer;
+    }
+
+    .btn-initial { 
+        background: var(--sub-primary); 
+        color: #000; /* Always black on gold/orange */
+    }
+    .btn-initial:hover { opacity: 0.9; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+
+    .btn-confirm { 
+        background: #28a745; 
+        color: #fff; 
+        display: none; 
+    }
+    
+    .btn-cancel-link {
+        background: transparent;
+        color: #ff4444;
+        font-size: 0.8rem;
+        border: 1px solid #ff4444;
+        margin-top: 10px;
+        border-radius: 5px;
+        padding: 5px;
+        width: 100%;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .btn-cancel-link:hover { background: rgba(255, 68, 68, 0.1); }
+
+    .btn-upgrade {
+        background: var(--text-muted); /* Fallback */
+        background: rgba(128, 128, 128, 0.2);
+        color: var(--sub-text);
+        border: 1px solid var(--sub-border);
+    }
+    .btn-upgrade:hover {
+        background: var(--sub-primary);
+        color: #000;
+        border-color: var(--sub-primary);
+    }
+    
+    /* Feature List Items */
+    .feature-list li {
+        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .feature-list li b { color: var(--sub-text); }
+</style>
+
+<div class="sub-wrapper">
+    <div class="container">
+        <div class="sub-container shadow-lg">
+            <div class="text-center mb-5">
+                <h1 class="display-5 fw-bold">Membership <b>Dashboard</b></h1>
+                <p class="text-normal">Manage your subscription and billing status below.</p>
+            </div>
+
+            <div class="row g-4 justify-content-center">
+                
+                {% set plans = [
+                    {'id': 'basic', 'name': 'BASIC', 'price': 300, 'disc': '20%', 'margin': 'All Services', 'days': 30},
+                    {'id': 'pro', 'name': 'PRO', 'price': 500, 'disc': '30%', 'margin': 'All Services', 'days': 30},
+                    {'id': 'premium', 'name': 'PREMIUM', 'price': 2000, 'disc': '40% + Rs 200 Cashback', 'margin': 'All Services', 'days': 180}
+                ] %}
+
+                {% for plan in plans %}
+                <div class="col-lg-4 col-md-6">
+                    {% set is_active = (current_user.sub_plan == plan.id and current_user.is_sub_active) %}
+                    
+                    <div class="plan-card {{ 'active-plan-card' if is_active else '' }}">
+                        {% if is_active %}
+                            <div class="status-badge">Current Plan</div>
+                        {% endif %}
+
+                        <h3 class="mt-2">{{ plan.name }}</h3>
+
+                        {% if is_active and current_user.sub_expiry %}
+                            {% set delta = current_user.sub_expiry - datetime_now %}
+                            <div class="days-left">
+                                ⏳ <b>{{ delta.days if delta.days > 0 else 0 }} Days</b> remaining
+                            </div>
+                        {% endif %}
+
+                        <div class="h2 price-display">{{ plan.price }} <small class="fs-6 opacity-50">PKR</small></div>
+                        
+                        <ul class="list-unstyled mb-4 text-normal feature-list">
+                            <li>✅ <b>{{ plan.disc }}</b> Discount on Each Order</li>
+                            <li>✅ Access on <b>{{ plan.margin }}</b></li>
+                            <li>✅ Valid: <b>{{ plan.days }} Days</b></li>
+                        </ul>
+
+                        <div class="mt-auto" id="action-{{ plan.id }}">
+                            {% if is_active %}
+                                <form action="{{ url_for('cancel_subscription') }}" method="POST" onsubmit="return confirm('Are you sure you want to cancel? You will lose benefits immediately.')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn-cancel-link">Stop Subscription</button>
+                                </form>
+                            {% elif current_user.is_sub_active %}
+                                <button class="btn-sub-action btn-upgrade" onclick="showConfirm('{{ plan.id }}')">Upgrade to {{ plan.name }}</button>
+                            {% else %}
+                                <button class="btn-sub-action btn-initial" onclick="showConfirm('{{ plan.id }}')">Activate {{ plan.name }}</button>
+                            {% endif %}
+                            
+                            <form action="{{ url_for('subscribe') }}" method="POST">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="plan" value="{{ plan.id }}">
+                                <button type="submit" class="btn-sub-action btn-confirm mt-2" id="confirm-{{ plan.id }}">Confirm & Pay</button>
+                            </form>
+                            <button class="btn-cancel-link" style="display:none; border:none; color: var(--text-muted);" id="cancel-btn-{{ plan.id }}" onclick="hideConfirm('{{ plan.id }}')">back</button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showConfirm(plan) {
+        // Reset buttons to initial state
+        document.querySelectorAll('.btn-initial, .btn-upgrade').forEach(b => b.style.display = 'block');
+        document.querySelectorAll('.btn-confirm, [id^="cancel-btn-"]').forEach(b => b.style.display = 'none');
+        
+        // Hide initial buttons for the selected plan
+        const container = document.getElementById('action-' + plan);
+        const initialBtn = container.querySelector('.btn-initial');
+        const upgradeBtn = container.querySelector('.btn-upgrade');
+        
+        if(initialBtn) initialBtn.style.display = 'none';
+        if(upgradeBtn) upgradeBtn.style.display = 'none';
+        
+        // Show confirm and cancel buttons for selected plan
+        document.getElementById('confirm-' + plan).style.display = 'block';
+        document.getElementById('cancel-btn-' + plan).style.display = 'block';
+    }
+
+    function hideConfirm(plan) {
+        // Simple UI reset without reload for smoother experience
+        document.getElementById('confirm-' + plan).style.display = 'none';
+        document.getElementById('cancel-btn-' + plan).style.display = 'none';
+        
+        const container = document.getElementById('action-' + plan);
+        const initialBtn = container.querySelector('.btn-initial');
+        const upgradeBtn = container.querySelector('.btn-upgrade');
+        
+        if(initialBtn) initialBtn.style.display = 'block';
+        if(upgradeBtn) upgradeBtn.style.display = 'block';
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}PanelProMax | #1 Social Media Marketing Panel{% endblock %}
+
+{% block content %}
+<style>
+    /* Strict font color enforcement based on theme */
+    .marketing-text-main { color: var(--text-main) !important; }
+    .marketing-text-brand { color: var(--primary-gold) !important; }
+    
+    /* Ensure muted text also follows the Black/Orange or White/Yellow rule */
+    .text-custom-muted { color: var(--text-muted) !important; }
+    
+    /* Ensure cards and icons use the correct brand color */
+    .icon-brand { color: var(--primary-gold) !important; }
+    .border-brand { border-color: var(--primary-gold) !important; }
+</style>
+
+<div class="container text-center py-5">
+    <div class="py-4">
+        <h1 class="display-4 fw-bold marketing-text-brand mb-3">Welcome to PanelProMax</h1>
+        <p class="lead mb-4 marketing-text-main">The World's Fastest and Cheapest SMM Panel for Viral Growth.</p>
+        
+        <div class="d-grid gap-3 d-sm-flex justify-content-sm-center mb-5">
+            <a href="{{ url_for('register') }}" class="btn btn-warning btn-lg px-5 fw-bold shadow">Register Now</a>
+            <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg px-5 marketing-text-main">Login</a>
+        </div>
+    </div>
+
+    <div class="card-premium mb-5 border-brand shadow-lg">
+        <div class="card-body py-4">
+            <h2 class="marketing-text-brand mb-2">🎁 Exclusive New User Gift</h2>
+            <p class="fs-5 marketing-text-main">Join today and get <strong>100 TikTok Followers</strong> absolutely <strong>FREE</strong>. No deposit required!</p>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-2">
+        <h2 class="marketing-text-brand mb-4 fw-bold">Why Choose PanelProMax?</h2>
+        
+        <div class="col-md-4">
+            <div class="card-premium h-100">
+                <i class="bi bi-lightning-charge-fill icon-brand fs-1 mb-3 d-block"></i>
+                <h3 class="h4 marketing-text-main">Instant Delivery</h3>
+                <p class="text-custom-muted small">Speed is our priority. Most orders start processing the second you click submit.</p>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card-premium h-100">
+                <i class="bi bi-shield-check icon-brand fs-1 mb-3 d-block"></i>
+                <h3 class="h4 marketing-text-main">Secure Payments</h3>
+                <p class="text-custom-muted small">Deposit with confidence. We use industry-standard encryption to protect your data.</p>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card-premium h-100">
+                <i class="bi bi-headset icon-brand fs-1 mb-3 d-block"></i>
+                <h3 class="h4 marketing-text-main">24/7 Support</h3>
+                <p class="text-custom-muted small">Our expert team is available around the clock to help you reach your goals.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5 g-4 align-items-center">
+        <div class="col-lg-6 text-start">
+            <h2 class="marketing-text-brand fw-bold">Earn While You Grow</h2>
+            <p class="marketing-text-main opacity-75">We don't just sell services; we reward your loyalty. Our unique streak system gives you more value every single day.</p>
+            <ul class="list-unstyled marketing-text-main mt-3">
+                <li class="mb-3"><i class="bi bi-check-circle-fill icon-brand me-2"></i> <strong>Daily Free Views:</strong> Claim increasing rewards every 24 hours just for checking in.</li>
+                <li class="mb-3"><i class="bi bi-trophy-fill icon-brand me-2"></i> <strong>The 7-Day Challenge:</strong> Maintain your streak for 7 days and unlock the <strong>Pro Plan for 3 Days</strong>—completely free!</li>
+                <li><i class="bi bi-stars icon-brand me-2"></i> <strong>Premium Discounts:</strong> Pro and VIP users enjoy massive price drops on high-quality services.</li>
+            </ul>
+        </div>
+        <div class="col-lg-6">
+            <div class="card-premium bg-dark border-brand p-4 shadow">
+                <h4 class="marketing-text-brand fw-bold mb-4">Membership Benefits</h4>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="marketing-text-main">Basic User</span>
+                    <span class="badge bg-secondary marketing-text-main">Standard Rates</span>
+                </div>
+                <hr class="opacity-25 border-brand">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="marketing-text-brand fw-bold">Pro Member (Streak Reward)</span>
+                    <span class="marketing-text-brand">30% OFF Each Service</span>
+                </div>
+                <hr class="opacity-25 border-brand">
+                <div class="d-flex justify-content-between">
+                    <span class="marketing-text-main">VIP Categories</span>
+                    <span class="badge bg-warning text-dark">Exclusive Access</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

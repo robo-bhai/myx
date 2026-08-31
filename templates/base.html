@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="google-site-verification" content="iJ-5HIO6bg7zxSohXPcrIhaWXeIunr3O784TO8fYJlM" />
+  
+  <title>{% block title %}PanelProMax | Best SMM Panel - Cheap & Fastest SMM Services{% endblock %}</title>
+  <meta name="description" content="PanelProMax is the best and cheapest SMM panel for Instagram, TikTok, YouTube, and Facebook. Join the top-rated SMM reseller panel for fast delivery and real followers.">
+  <meta name="keywords" content="smm panel, best smm panel, cheap smm panel, cheapest smm panel, top smm panel, best smm panel in world, smm panel services, smm panel website, smm panel reseller, smm panel api, smm panel reviews, smm panel list, buy smm panel, join smm panel, smm panel login, smm panel signup, instagram smm panel, instagram likes panel, instagram followers panel, youtube smm panel, youtube views panel, tiktok smm panel, tiktok followers panel, facebook smm panel, telegram smm panel, cheap instagram likes, cheap youtube views, cheap tiktok followers, fast delivery smm panel, real followers smm panel, high quality smm panel, trusted smm panel, legit smm panel, best smm panel for resellers, low price smm panel, affordable smm panel, smm panel pakistan, smm panel india, smm panel usa, world best smm panel, organic smm panel, social media marketing panel, smm services online, smm growth services, smm panel 2026, best panel for instagram growth, top smm reseller panel, automated smm panel">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://panelpromax.pythonanywhere.com/">
+
+  <meta property="og:title" content="PanelProMax | #1 Best & Cheapest SMM Panel">
+  <meta property="og:description" content="Boost your social media growth with the fastest SMM panel. Real followers, likes, and views instantly.">
+  <meta property="og:url" content="https://panelpromax.pythonanywhere.com/">
+  <meta property="og:type" content="website">
+
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='Icons/Icon-192x192.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='Icons/Icon-192x192.png') }}">
+  
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#FFD700">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+
+  <style>
+    :root {
+      /* --- Default Dark Mode Variables (Yellow & White) --- */
+      --primary-gold: #FFD700; /* Yellow */
+      --text-main: #ffffff;    /* White */
+      --text-muted: #888888;
+      
+      --dark-bg: #0b0b0b;
+      --card-bg: #161616;
+      --glass-bg: rgba(255, 255, 255, 0.03);
+      --glass-border: rgba(255, 215, 0, 0.1);
+      
+      --nav-height: 75px;
+      
+      /* Background Overlay Gradients (Dark) */
+      --bg-overlay-1: rgba(5, 5, 5, 0.85);
+      --bg-overlay-2: rgba(5, 5, 5, 0.95);
+
+      /* Component Backgrounds (Dark) */
+      --sidebar-bg: rgba(0, 0, 0, 0.6);
+      --mobile-header-bg: rgba(0, 0, 0, 0.85);
+      --bottom-nav-bg: rgba(10, 10, 10, 0.98);
+      --nav-active-bg: rgba(255, 215, 0, 0.1);
+      
+      /* Center Button Gradient (Yellow) */
+      --btn-gradient: linear-gradient(135deg, #FFD700 0%, #FFB800 100%);
+      --btn-icon-color: #000000;
+
+      /* Animation Elements */
+      --petal-color: rgba(255, 255, 255, 0.8);
+      
+      --transition: all 0.25s ease-in-out;
+    }
+
+    /* --- Light Mode Overrides (Orange & Black) --- */
+    [data-theme="light"] {
+      --primary-gold: #FF6600; /* Orange */
+      --text-main: #000000;    /* Black */
+      --text-muted: #444444;   /* Darker Gray for readability */
+      
+      --dark-bg: #f3f4f6;
+      --card-bg: #ffffff;
+      --glass-bg: rgba(0, 0, 0, 0.03);
+      --glass-border: rgba(0, 0, 0, 0.1);
+      
+      /* Background Overlay Gradients (Light) */
+      --bg-overlay-1: rgba(245, 245, 245, 0.85);
+      --bg-overlay-2: rgba(255, 255, 255, 0.95);
+
+      /* Component Backgrounds (Light) */
+      --sidebar-bg: rgba(255, 255, 255, 0.7);
+      --mobile-header-bg: rgba(255, 255, 255, 0.9);
+      --bottom-nav-bg: rgba(255, 255, 255, 0.98);
+      --nav-active-bg: rgba(255, 102, 0, 0.15); /* Orange Tint */
+
+      /* Center Button Gradient (Orange) */
+      --btn-gradient: linear-gradient(135deg, #FF6600 0%, #FF8533 100%);
+      --btn-icon-color: #ffffff; /* White icon on Orange button */
+
+      /* Animation Elements */
+      --petal-color: rgba(255, 102, 0, 0.8); /* Orange Snow */
+    }
+
+    body {
+      background-color: var(--dark-bg); 
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding-bottom: var(--nav-height);
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      transition: background-color 0.3s ease, color 0.3s ease;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      overscroll-behavior-y: contain;
+    }
+
+    /* Connectivity Bar Styles */
+    #connectivity-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      z-index: 10001;
+      transition: transform 0.4s ease, background-color 0.4s ease;
+      transform: translateY(-4px);
+    }
+    #connectivity-text {
+      position: fixed;
+      top: 4px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      background: rgba(255, 0, 0, 0.9);
+      color: white;
+      font-size: 10px;
+      font-weight: bold;
+      padding: 2px 0;
+      z-index: 10001;
+      display: none;
+      text-transform: uppercase;
+    }
+
+    /* --- Full Screen Background Layer --- */
+    #app-background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0; 
+      
+      background-image: 
+        /* Dynamic Gradient Overlay */
+        linear-gradient(var(--bg-overlay-1), var(--bg-overlay-2)),
+        url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop');
+      
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      pointer-events: none; 
+      transition: background-image 0.5s ease;
+    }
+
+    /* --- Desktop Sidebar --- */
+    .sidebar {
+      background: var(--sidebar-bg);
+      backdrop-filter: blur(10px);
+      height: 100vh;
+      border-right: 1px solid var(--glass-border);
+      position: fixed;
+      width: 280px;
+      z-index: 1000;
+      padding-top: 20px;
+      transition: background 0.3s ease, border-color 0.3s ease;
+    }
+
+    .sidebar-brand {
+      padding: 20px 30px;
+      font-weight: 800;
+      font-size: 1.6rem;
+      color: var(--primary-gold);
+      letter-spacing: -1px;
+    }
+
+    .sidebar a, .sidebar button.theme-btn {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 12px 30px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-weight: 500;
+      transition: var(--transition);
+      margin: 4px 15px;
+      border-radius: 12px;
+      background: transparent;
+      border: none;
+      width: calc(100% - 30px);
+      text-align: left;
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .sidebar a:hover, .sidebar a.active, .sidebar button.theme-btn:hover {
+      background: var(--nav-active-bg);
+      color: var(--primary-gold);
+    }
+
+    /* --- Mobile Top Header --- */
+    .mobile-header {
+      background: var(--mobile-header-bg);
+      backdrop-filter: blur(15px);
+      padding: 12px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 999;
+      border-bottom: 1px solid var(--glass-bg);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.3s ease, border-color 0.3s ease;
+    }
+
+    .mobile-header .brand {
+      font-weight: 800;
+      color: var(--primary-gold);
+      font-size: 1.1rem;
+      margin: 0;
+    }
+
+    /* --- Bottom Navigation --- */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: var(--nav-height);
+      background: var(--bottom-nav-bg);
+      backdrop-filter: blur(20px);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      border-top: 1px solid var(--glass-border);
+      z-index: 1001;
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.1); 
+      transition: background 0.3s ease, border-color 0.3s ease;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: var(--transition);
+      flex: 1;
+      padding-top: 8px;
+    }
+
+    .nav-item i {
+      font-size: 1.5rem;
+      margin-bottom: 3px;
+    }
+
+    .nav-item.active {
+      color: var(--primary-gold);
+    }
+
+    .nav-item-center {
+      background: var(--btn-gradient); /* Dynamic Gradient */
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      margin-top: -35px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      color: var(--btn-icon-color) !important;
+      transform: rotate(45deg);
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    .nav-item-center i {
+      transform: rotate(-45deg);
+      margin-bottom: 0;
+      font-size: 1.8rem;
+    }
+
+    .main-content {
+      padding: 20px;
+      animation: iosSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: transform, opacity;
+      position: relative;
+      z-index: 2; 
+    }
+
+    @media (min-width: 992px) {
+      .bottom-nav, .mobile-header { display: none !important; }
+      .main-content { margin-left: 280px; padding: 40px; }
+    }
+
+    @media (max-width: 991px) {
+      .sidebar { display: none; }
+    }
+
+    .card-premium {
+      background: var(--card-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 20px;
+      transition: background 0.3s ease, border-color 0.3s ease;
+    }
+
+    .alert {
+      border-radius: 12px;
+      border: none;
+      font-weight: 500;
+    }
+
+    #page-loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--primary-gold), var(--primary-gold), transparent);
+      z-index: 9999;
+      transform: translateX(-100%);
+      transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+    }
+
+    @keyframes iosSlideUp {
+      0% { opacity: 0; transform: translate3d(0, 30px, 0) scale(0.98); }
+      100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+    }
+
+    .page-exit {
+      pointer-events: none;
+      animation: iosSlideLeft 0.4s forwards cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes iosSlideLeft {
+      to { opacity: 0; transform: translate3d(-30px, 0, 0); filter: blur(4px); }
+    }
+
+    .ios-spinner {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10000;
+      background: rgba(0,0,0,0.5);
+      padding: 20px;
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+    }
+
+    .spinner-inner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255, 215, 0, 0.1);
+      border-top: 3px solid var(--primary-gold);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* --- FLOWERS (NOW SNOW) --- */
+    #flower-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 99999; 
+      overflow: hidden;
+    }
+
+    .flower-petal {
+      position: absolute;
+      background: var(--petal-color);
+      border-radius: 50%;
+      pointer-events: none;
+      filter: blur(1px);
+      box-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
+      animation: fall-flower linear infinite;
+      transition: background 0.3s ease, transform 0.4s cubic-bezier(0.17, 0.84, 0.44, 1);
+    }
+
+    @keyframes fall-flower {
+      0% {
+        transform: translate3d(0, -50px, 0);
+        opacity: 0;
+      }
+      10% { opacity: 0.8; }
+      90% { opacity: 0.8; }
+      100% {
+        transform: translate3d(10px, 110vh, 0);
+        opacity: 0;
+      }
+    }
+
+    /* --- WHATSAPP ICON STYLES --- */
+    .whatsapp-float {
+      position: fixed;
+      width: 50px;
+      height: 50px;
+      bottom: calc(var(--nav-height) + 15px);
+      right: 20px;
+      background-color: #25d366;
+      color: #FFF;
+      border-radius: 50px;
+      text-align: center;
+      font-size: 30px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 1002;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      transition: transform 0.3s ease;
+    }
+
+    .whatsapp-float:hover {
+      transform: scale(1.1);
+      color: #fff;
+    }
+
+    @media (min-width: 992px) {
+      .whatsapp-float {
+        bottom: 30px;
+        right: 30px;
+        width: 60px;
+        height: 60px;
+        font-size: 35px;
+      }
+    }
+
+    /* --- BRAND ANIMATION CSS --- */
+    .brand-container {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .brand-shine {
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 50%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 215, 0, 0.15),
+        transparent
+      );
+      transform: skewX(-25deg);
+      z-index: -1;
+      animation: dualShine 3s ease-in-out forwards;
+      animation-delay: 1.5s;
+    }
+
+    @keyframes dualShine {
+      0% { left: -100%; }
+      30% { left: 150%; }
+      60% { left: -100%; }
+      90% { left: 150%; }
+      100% { left: 150%; }
+    }
+
+    .anim-pakistani {
+      display: inline-block;
+      opacity: 0;
+      animation: pakistaniZigZag 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      color: var(--text-main);
+      transition: color 0.3s ease;
+    }
+
+    @keyframes pakistaniZigZag {
+      0% { opacity: 0; transform: translate3d(-10px, 40px, 0) rotate(-5deg); }
+      40% { transform: translate3d(5px, -10px, 0) rotate(3deg); }
+      70% { transform: translate3d(-2px, 5px, 0) rotate(-1deg); }
+      100% { opacity: 1; transform: translate3d(0, 0, 0) rotate(0deg); }
+    }
+
+    .anim-h {
+      display: inline-block;
+      font-weight: 800;
+      opacity: 0;
+      transform: scale(0);
+      animation: hGrow 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      animation-delay: 0.7s;
+      margin-left: 2px;
+      color: var(--primary-gold);
+      transition: color 0.3s ease;
+    }
+
+    @keyframes hGrow {
+      0% { opacity: 0; transform: scale(0); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+  </style>
+</head>
+
+<body id="touch-zone">
+
+<div id="connectivity-bar"></div>
+<div id="connectivity-text">please check your internet connection</div>
+
+<div id="app-background"></div>
+
+<div id="flower-container"></div>
+
+<a href="https://wa.me/+447743246639" class="whatsapp-float" target="_blank" aria-label="Support">
+  <i class="bi bi-whatsapp"></i>
+</a>
+
+<div id="page-loader"></div>
+<div class="ios-spinner" id="ios-spinner"><div class="spinner-inner"></div></div>
+
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-container">
+      <div class="brand-shine"></div>
+      <span class="anim-pakistani">Hadi</span><span class="anim-h">88</span>
+    </div>
+  </div>
+  <nav>
+    {% if current_user.is_authenticated %}
+      <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' }}">
+        <i class="bi bi-house-door-fill"></i> Dashboard
+      </a>
+      <a href="{{ url_for('new_order') }}" class="{{ 'active' if request.endpoint == 'new_order' }}">
+        <i class="bi bi-plus-square-fill"></i> New Order
+      </a>
+      <a href="{{ url_for('wallet') }}" class="{{ 'active' if request.endpoint == 'wallet' }}">
+        <i class="bi bi-wallet2"></i> Wallet
+      </a>
+      <a href="{{ url_for('status') }}" class="{{ 'active' if request.endpoint == 'status' }}">
+        <i class="bi bi-clock-history"></i> Order Status
+      </a>
+      <a href="{{ url_for('refer') }}" class="{{ 'active' if request.endpoint == 'refer' }}">
+        <i class="bi bi-people-fill"></i> Refer Friends
+      </a>
+      <a href="{{ url_for('profile') }}" class="{{ 'active' if request.endpoint == 'profile' }}">
+        <i class="bi bi-person-circle"></i> Profile
+      </a>
+
+      <button class="theme-btn" id="theme-toggle-desktop" aria-label="Toggle Dark Mode">
+        <i class="bi bi-moon-stars-fill" id="theme-icon-desktop"></i>
+        <span id="theme-text-desktop">Dark Mode</span>
+      </button>
+
+      {% if current_user.is_admin %}
+        <hr class="mx-3 opacity-25">
+        <a href="{{ url_for('admin_deposits') }}" class="{{ 'active' if request.endpoint == 'admin_deposits' }}">
+          <i class="bi bi-shield-lock"></i> Admin Deposits
+        </a>
+        <a href="{{ url_for('admin_users') }}" class="{{ 'active' if request.endpoint == 'admin_users' }}">
+          <i class="bi bi-person-gear"></i> Manage Users
+        </a>
+      {% endif %}
+
+      <a href="{{ url_for('logout') }}" class="text-danger mt-4">
+        <i class="bi bi-box-arrow-right"></i> Logout
+      </a>
+    {% else %}
+      <a href="{{ url_for('login') }}" class="{{ 'active' if request.endpoint == 'login' }}">
+        <i class="bi bi-box-arrow-in-right"></i> Login
+      </a>
+      <a href="{{ url_for('register') }}" class="{{ 'active' if request.endpoint == 'register' }}">
+        <i class="bi bi-person-plus-fill"></i> Register
+      </a>
+      <button class="theme-btn mt-2" id="theme-toggle-desktop-guest" aria-label="Toggle Dark Mode">
+        <i class="bi bi-moon-stars-fill" id="theme-icon-desktop-guest"></i>
+        <span id="theme-text-desktop-guest">Dark Mode</span>
+      </button>
+    {% endif %}
+  </nav>
+</aside>
+
+<header class="mobile-header">
+  <h1 class="brand">
+    <div class="brand-container">
+      <div class="brand-shine"></div>
+      <span class="anim-pakistani">Hadi</span><span class="anim-h">88</span>
+    </div>
+  </h1>
+  
+  <div class="d-flex align-items-center gap-3">
+    <button class="btn btn-link p-0 text-secondary" id="theme-toggle-mobile" style="font-size: 1.2rem; border: none; background: transparent;">
+      <i class="bi bi-moon-stars-fill" id="theme-icon-mobile"></i>
+    </button>
+
+    {% if current_user.is_authenticated %}
+      <span class="small fw-bold text-warning">Rs {{ "{:,.0f}".format(current_user.balance) }}</span>
+    {% endif %}
+  </div>
+</header>
+
+<main class="main-content" id="main-transition-wrapper">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+</main>
+
+<nav class="bottom-nav">
+  {% if current_user.is_authenticated %}
+    <a href="{{ url_for('dashboard') }}" class="nav-item {{ 'active' if request.endpoint == 'dashboard' }}">
+      <i class="bi bi-grid-fill"></i>
+      <span>Home</span>
+    </a>
+    <a href="{{ url_for('wallet') }}" class="nav-item {{ 'active' if request.endpoint == 'wallet' }}">
+      <i class="bi bi-wallet2"></i>
+      <span>Wallet</span>
+    </a>
+    <a href="{{ url_for('new_order') }}" class="nav-item">
+      <div class="nav-item-center">
+        <i class="bi bi-plus-lg"></i>
+      </div>
+    </a>
+    <a href="{{ url_for('refer') }}" class="nav-item {{ 'active' if request.endpoint == 'refer' }}">
+      <i class="bi bi-people-fill"></i>
+      <span>Refer</span>
+    </a>
+    <a href="{{ url_for('profile') }}" class="nav-item {{ 'active' if request.endpoint == 'profile' }}">
+      <i class="bi bi-person-circle"></i>
+      <span>Profile</span>
+    </a>
+  {% else %}
+    <a href="{{ url_for('login') }}" class="nav-item {{ 'active' if request.endpoint == 'login' }}">
+      <i class="bi bi-box-arrow-in-right"></i>
+      <span>Login</span>
+    </a>
+    <a href="{{ url_for('register') }}" class="nav-item {{ 'active' if request.endpoint == 'register' }}">
+      <i class="bi bi-person-plus-fill"></i>
+      <span>Join</span>
+    </a>
+  {% endif %}
+</nav>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  // PWA Service Worker Registration
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('SW Registered!', reg.scope))
+        .catch(err => console.log('SW Registration Failed', err));
+    });
+  }
+
+  // Connectivity Monitor
+  const conBar = document.getElementById('connectivity-bar');
+  const conText = document.getElementById('connectivity-text');
+
+  function updateStatus() {
+    if (navigator.onLine) {
+      conBar.style.backgroundColor = '#00ff00';
+      conBar.style.transform = 'translateY(0)';
+      conText.style.display = 'none';
+      setTimeout(() => {
+        conBar.style.transform = 'translateY(-4px)';
+      }, 1000);
+    } else {
+      conBar.style.backgroundColor = '#ff0000';
+      conBar.style.transform = 'translateY(0)';
+      conText.style.display = 'block';
+    }
+  }
+
+  window.addEventListener('online', updateStatus);
+  window.addEventListener('offline', updateStatus);
+
+  document.addEventListener('DOMContentLoaded', () => {
+    /* --- THEME TOGGLE LOGIC --- */
+    const toggleBtns = document.querySelectorAll('#theme-toggle-desktop, #theme-toggle-mobile, #theme-toggle-desktop-guest');
+    const htmlEl = document.documentElement;
+    
+    // Auto Theme Logic (7AM to 7PM)
+    const now = new Date();
+    const currentHour = now.getHours();
+    const isDayTime = currentHour >= 7 && currentHour < 19;
+    
+    // Check if user has a manually saved preference
+    const savedTheme = localStorage.getItem('theme');
+    
+    // Determine current theme: use saved preference, or auto-force based on time
+    let currentTheme = savedTheme;
+    if (!savedTheme) {
+        currentTheme = isDayTime ? 'light' : 'dark';
+    }
+
+    const updateIcons = (theme) => {
+      const isLight = theme === 'light';
+      const iconClass = isLight ? 'bi-sun-fill' : 'bi-moon-stars-fill';
+      const btnText = isLight ? 'Light Mode' : 'Dark Mode';
+
+      const deskIcon = document.getElementById('theme-icon-desktop');
+      const deskText = document.getElementById('theme-text-desktop');
+      if(deskIcon) deskIcon.className = `bi ${iconClass}`;
+      if(deskText) deskText.textContent = btnText;
+
+      const deskGuestIcon = document.getElementById('theme-icon-desktop-guest');
+      const deskGuestText = document.getElementById('theme-text-desktop-guest');
+      if(deskGuestIcon) deskGuestIcon.className = `bi ${iconClass}`;
+      if(deskGuestText) deskGuestText.textContent = btnText;
+
+      const mobileIcon = document.getElementById('theme-icon-mobile');
+      if(mobileIcon) mobileIcon.className = `bi ${iconClass}`;
+    };
+
+    // Apply Theme
+    if (currentTheme === 'light') {
+      htmlEl.setAttribute('data-theme', 'light');
+    } else {
+      htmlEl.removeAttribute('data-theme');
+    }
+    updateIcons(currentTheme);
+
+    // Event Listeners for toggle buttons
+    toggleBtns.forEach(btn => {
+      if(!btn) return;
+      btn.addEventListener('click', () => {
+        const hasTheme = htmlEl.hasAttribute('data-theme');
+        if (hasTheme) {
+          htmlEl.removeAttribute('data-theme');
+          localStorage.setItem('theme', 'dark');
+          updateIcons('dark');
+        } else {
+          htmlEl.setAttribute('data-theme', 'light');
+          localStorage.setItem('theme', 'light');
+          updateIcons('light');
+        }
+      });
+    });
+
+    /* --- SNOW GENERATOR WITH TOUCH EFFECTS --- */
+    const createFlowers = () => {
+      const container = document.getElementById('flower-container');
+      const petalCount = window.innerWidth < 768 ? 25 : 45; 
+
+      for (let i = 0; i < petalCount; i++) {
+        const petal = document.createElement('div');
+        petal.className = 'flower-petal';
+        const size = Math.random() * 5 + 3 + 'px';
+        const left = Math.random() * 100 + '%';
+        const duration = Math.random() * 10 + 10 + 's';
+        const delay = Math.random() * 15 + 's';
+        petal.style.width = size;
+        petal.style.height = size;
+        petal.style.left = left;
+        petal.style.animationDuration = duration;
+        petal.style.animationDelay = delay;
+        container.appendChild(petal);
+      }
+    };
+    createFlowers();
+
+    const handleTouch = (e) => {
+        const x = e.touches ? e.touches[0].clientX : e.clientX;
+        const y = e.touches ? e.touches[0].clientY : e.clientY;
+        const petals = document.querySelectorAll('.flower-petal');
+        
+        petals.forEach(p => {
+            const rect = p.getBoundingClientRect();
+            const pX = rect.left + rect.width / 2;
+            const pY = rect.top + rect.height / 2;
+            
+            const dist = Math.hypot(x - pX, y - pY);
+            if (dist < 200) {
+                const angle = Math.atan2(pY - y, pX - x);
+                const force = (200 - dist) / 2;
+                const moveX = Math.cos(angle) * force;
+                const moveY = Math.sin(angle) * force;
+                
+                p.style.transform = `translate3d(${moveX}px, ${moveY}px, 0) scale(1.5)`;
+                setTimeout(() => {
+                    p.style.transform = '';
+                }, 400);
+            }
+        });
+    };
+
+    document.addEventListener('touchstart', handleTouch, {passive: true});
+    document.addEventListener('mousedown', handleTouch);
+
+    /* --- PAGE TRANSITIONS --- */
+    const loader = document.getElementById('page-loader');
+    const spinner = document.getElementById('ios-spinner');
+    const content = document.getElementById('main-transition-wrapper');
+    const links = document.querySelectorAll('a:not([target="_blank"]):not([href^="#"]):not([href^="javascript"]):not(.whatsapp-float)');
+
+    const handleNavigation = (targetUrl) => {
+        loader.style.transition = 'transform 0.4s cubic-bezier(0.65, 0, 0.35, 1)';
+        loader.style.transform = 'translateX(-30%)';
+        content.classList.add('page-exit');
+
+        setTimeout(() => {
+          spinner.style.display = 'block';
+          loader.style.transform = 'translateX(0%)';
+        }, 150);
+
+        setTimeout(() => {
+          window.location.href = targetUrl;
+        }, 350);
+    };
+
+    links.forEach(link => {
+      link.addEventListener('click', (e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        if (link.hostname === window.location.hostname) {
+          e.preventDefault();
+          handleNavigation(link.href);
+        }
+      });
+    });
+
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) {
+        loader.style.transition = 'none';
+        loader.style.transform = 'translateX(-100%)';
+        spinner.style.display = 'none';
+        content.classList.remove('page-exit');
+      }
+    });
+
+    document.querySelectorAll('form').forEach(form => {
+      form.addEventListener('submit', () => {
+        loader.style.transform = 'translateX(-20%)';
+        spinner.style.display = 'block';
+      });
+    });
+  });
+</script>
+</body>
+</html>

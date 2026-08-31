@@ -1,0 +1,293 @@
+{% extends 'base.html' %}
+{% block title %}Wallet | Secure Deposits{% endblock %}
+{% block content %}
+
+<style>
+  /* --- Local Overrides using Base Variables --- */
+  :root {
+    --wallet-primary: var(--primary-gold);
+    --wallet-bg: var(--card-bg);
+    --wallet-text: var(--text-main);
+    --wallet-border: var(--glass-border);
+    --wallet-input-bg: rgba(255, 215, 0, 0.03);
+  }
+
+  /* Light Mode Specific Overrides */
+  [data-theme="light"] {
+    --wallet-input-bg: #f8f9fa;
+  }
+
+  body {
+    /* Base.html handles main background, we just ensure text color is consistent */
+    color: var(--wallet-text);
+    font-size: 0.85rem;
+    overflow-x: hidden;
+  }
+
+  /* --- BALANCE HEADER (COMPACT) --- */
+  .balance-container {
+    padding: 1.5rem 0;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--wallet-border);
+    animation: fadeInDown 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .wallet-header {
+    font-weight: 800;
+    font-size: 2.2rem;
+    color: var(--wallet-text);
+    letter-spacing: -1px;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.1);
+  }
+
+  .pkr-label { 
+    font-size: 1rem; 
+    color: var(--wallet-primary); 
+    margin-right: 4px;
+    font-weight: 600;
+  }
+
+  .sub-label {
+    color: var(--wallet-primary);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    opacity: 0.9;
+  }
+
+  /* --- COMPACT PANELS --- */
+  .info-box, .card {
+    background: var(--wallet-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--wallet-border) !important;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    transition: background 0.3s ease, border-color 0.3s ease;
+  }
+
+  /* Special emphasis for the instruction box */
+  .info-box {
+    padding: 1.25rem;
+  }
+  
+  /* Dark Mode specific glow for info box */
+  [data-theme="dark"] .info-box {
+    box-shadow: 0 0 15px rgba(255, 214, 0, 0.1);
+  }
+
+  .info-box h5 {
+    color: var(--wallet-primary);
+    font-weight: 800;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--wallet-border);
+    padding-bottom: 8px;
+  }
+
+  .info-box li {
+    padding: 6px 0;
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.1);
+    color: var(--wallet-text);
+  }
+
+  .info-box strong { color: var(--wallet-primary); opacity: 0.9; }
+  .info-box span { font-weight: 600; }
+
+  /* --- INSTRUCTION TEXT --- */
+  .instruction-text {
+    color: var(--wallet-text);
+    font-size: 0.75rem;
+    background: rgba(255, 215, 0, 0.05);
+    padding: 10px;
+    border-radius: 8px;
+    border-left: 3px solid var(--wallet-primary);
+    margin-bottom: 1.5rem;
+  }
+
+  /* --- FORM STYLING --- */
+  .form-label {
+    font-weight: 700;
+    color: var(--wallet-primary);
+    font-size: 0.65rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .form-control {
+    background-color: var(--wallet-input-bg) !important;
+    color: var(--wallet-text) !important;
+    border: 1px solid var(--wallet-border);
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+  }
+
+  .form-control:focus {
+    border-color: var(--wallet-primary);
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.2);
+    outline: none;
+  }
+  
+  /* Placeholder adaptation */
+  .form-control::placeholder {
+    color: var(--text-muted);
+    opacity: 0.7;
+  }
+
+  .input-group-text {
+    background-color: var(--wallet-primary);
+    color: #000; /* Always black text on primary color background */
+    border: none;
+    font-weight: 800;
+    font-size: 0.8rem;
+  }
+
+  /* --- BUTTONS --- */
+  .btn-primary {
+    background-color: var(--wallet-primary);
+    border: none;
+    color: #000 !important; 
+    font-weight: 800;
+    border-radius: 8px;
+    padding: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.85rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    transition: all 0.25s ease;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+    opacity: 0.9;
+  }
+
+  /* --- ALERTS --- */
+  .alert {
+    background: var(--wallet-bg);
+    border: 1px solid var(--wallet-border);
+    color: var(--wallet-primary);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  
+  .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+  }
+  [data-theme="light"] .btn-close {
+      filter: none;
+  }
+
+  @keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 576px) {
+    .wallet-header { font-size: 1.8rem; }
+    .container { padding-left: 1rem; padding-right: 1rem; }
+  }
+</style>
+
+<div class="container py-3">
+
+  <div class="text-center balance-container">
+    <div class="sub-label mb-1">Available Funds</div>
+    <div class="wallet-header">
+      <span class="pkr-label">Rs</span>{{ "{:,.2f}".format(balance) }}
+    </div>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-dismissible fade show" role="alert">
+          <i class="bi bi-shield-check me-2"></i> {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <div class="info-box">
+    <h5>Merchant Payment Details</h5>
+    <ul class="list-unstyled mb-0">
+      <li><strong>Provider:</strong> <span>Naya Pay</span></li>
+      <li><strong>Name:</strong> <span>Coming Soon</span></li>
+      <li><strong>Number:</strong> <span>Coming Soon</span></li>
+    </ul>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-body p-4">
+      <h5 class="text-center mb-4" style="letter-spacing: 2px; font-weight: 800; color: var(--wallet-primary); font-size: 0.9rem;">DEPOSIT REQUEST</h5>
+      
+      <div class="instruction-text">
+        <i class="bi bi-info-circle-fill me-2"></i> For now you can Recharge your Account By Clicking On whatsapp Icon
+      </div>
+
+      <form method="POST" action="{{ url_for('wallet') }}" id="walletForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="request_deposit">
+        
+        <div class="mb-3">
+          <label class="form-label">Sender Name</label>
+          <input type="text" name="sender_name" class="form-control" placeholder="Full account name" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Sender Number</label>
+          <input type="text" name="sender_account" class="form-control" placeholder="03xx xxxxxxx" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Deposit Amount</label>
+          <div class="input-group">
+              <span class="input-group-text">Rs</span>
+              <input type="number" step="0.01" min="300" name="amount" class="form-control" placeholder="Min. 300" required>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label">1234</label>
+          <input type="text" name="transaction_id" class="form-control" placeholder="Enter 1234" required>
+        </div>
+
+        <div class="d-grid">
+          <button type="submit" class="btn btn-primary">
+              <i class="bi bi-whatsapp me-2"></i> Submit & Verify
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+<script>
+    // Preservation of backend WhatsApp redirection logic
+    {% if session.get('trigger_whatsapp') %}
+        {% set admin_number = "447743246639" %} 
+        {% set message = "Hello Team, please review my wallet top-up request. " ~ current_user.username %}
+        {% set encoded_message = message | urlencode %}
+        
+        window.onload = function() {
+            window.location.href = "https://wa.me/{{ admin_number }}?text={{ encoded_message }}";
+        };
+        {{ session.pop('trigger_whatsapp') }}
+    {% endif %}
+</script>
+
+{% endblock %}

@@ -1,0 +1,747 @@
+{% extends 'base.html' %}
+{% block title %}New Order | Engage X{% endblock %}
+
+{% block content %}
+<style>
+    /* --- Local Overrides using Base Variables --- */
+    :root { 
+        /* Map local variables to Base.html variables for consistency */
+        --theme-primary: var(--primary-gold); 
+        --theme-bg: var(--card-bg);
+        --theme-text: var(--text-main);
+        --theme-text-muted: var(--text-muted);
+        --theme-border: var(--glass-border);
+        
+        /* Brand Colors */
+        --tiktok-color: #ff0050;
+        --fb-color: #1877F2;
+        --ig-color: #E1306C;
+    }
+
+    .order-wrapper { max-width: 1000px; margin: 0 auto; }
+    
+    /* Card Styling */
+    .glass-card {
+        background: var(--theme-bg);
+        border: 1px solid var(--theme-border);
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        transition: background 0.3s ease, border-color 0.3s ease;
+    }
+
+    /* Headers */
+    .section-header {
+        font-size: 0.8rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--theme-primary);
+        margin-bottom: 1.25rem;
+        display: flex;
+        align-items: center;
+    }
+    .section-header::after { 
+        content: ""; 
+        flex: 1; 
+        height: 1px; 
+        background: var(--theme-primary); 
+        margin-left: 10px; 
+        opacity: 0.5;
+    }
+
+    /* --- Platform Grid --- */
+    #platformContainer {
+        overflow: hidden;
+        transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        max-height: 195px; 
+    }
+    #platformContainer.expanded {
+        max-height: 1200px; 
+    }
+
+    .platform-card {
+        background: var(--theme-bg);
+        border: 1px solid var(--theme-border);
+        border-radius: 12px;
+        padding: 12px 5px;
+        text-align: center;
+        transition: 0.2s;
+        cursor: pointer;
+        color: var(--theme-text-muted);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .platform-card:hover { 
+        border-color: var(--theme-primary); 
+        color: var(--theme-text); 
+        transform: translateY(-2px);
+    }
+    
+    .platform-card.active {
+        border-color: var(--theme-primary);
+        color: var(--theme-primary);
+        background: rgba(255, 215, 0, 0.05);
+    }
+
+    .platform-card i { font-size: 1.5rem; margin-bottom: 4px; display: block; }
+
+    .expand-toggle {
+        font-size: 0.75rem;
+        color: var(--theme-primary);
+        cursor: pointer;
+        text-decoration: none;
+        float: right;
+        margin-top: -30px;
+        transition: 0.3s;
+        font-weight: 700;
+    }
+
+    /* --- Modern Custom Dropdowns --- */
+    .custom-select-wrapper {
+        position: relative;
+        user-select: none;
+        margin-bottom: 1.5rem;
+    }
+
+    .custom-select-trigger {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 18px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: var(--theme-text);
+        background: var(--theme-bg);
+        border: 1px solid var(--theme-border);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .custom-select-trigger:after {
+        content: '\F282'; /* Bootstrap bi-chevron-down */
+        font-family: 'bootstrap-icons';
+        font-size: 0.8rem;
+        transition: transform 0.3s;
+    }
+
+    .custom-select-wrapper.open .custom-select-trigger:after {
+        transform: rotate(180deg);
+    }
+
+    .custom-options {
+        position: absolute;
+        display: block;
+        top: 100%;
+        left: 0;
+        right: 0;
+        min-width: 100%;
+        margin-top: 5px;
+        background: var(--theme-bg);
+        border: 1px solid var(--theme-border);
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        z-index: 100;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transform: translateY(-10px);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .custom-select-wrapper.open .custom-options {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: all;
+        transform: translateY(0);
+    }
+
+    .custom-option {
+        padding: 12px 18px;
+        cursor: pointer;
+        transition: background 0.2s;
+        border-bottom: 1px solid rgba(255,215,0,0.05);
+        color: var(--theme-text-muted);
+    }
+
+    .custom-option:last-child { border-bottom: none; }
+
+    .custom-option:hover {
+        background: rgba(255, 215, 0, 0.1);
+        color: var(--theme-primary);
+    }
+
+    .custom-option.selected {
+        background: rgba(255, 215, 0, 0.15);
+        color: var(--theme-primary);
+        font-weight: bold;
+    }
+
+    /* Red State for Category Alert */
+    .category-alert-red {
+        border-color: #ff4d4d !important;
+        box-shadow: 0 0 10px rgba(255, 77, 77, 0.3) !important;
+    }
+
+    @keyframes blink-red {
+        0%, 100% { border-color: #ff4d4d; }
+        50% { border-color: var(--theme-border); }
+    }
+    .blink-red {
+        animation: blink-red 0.4s ease-in-out 3;
+    }
+
+    /* --- Form Elements (Hidden select but required for POST) --- */
+    .hidden-select { display: none; }
+
+    .form-control {
+        background-color: var(--theme-bg) !important;
+        border: 1px solid var(--theme-border) !important;
+        color: var(--theme-text) !important;
+        padding: 12px 14px;
+        border-radius: 10px;
+        transition: border-color 0.3s ease;
+    }
+
+    .form-control:focus {
+        border-color: var(--theme-primary) !important;
+        box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+        outline: none;
+    }
+
+    /* --- Quantity Grid --- */
+    .qty-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; }
+    
+    .qty-box { 
+        background-color: var(--theme-bg); 
+        color: var(--theme-text); 
+        font-weight: 700; 
+        font-size: 0.85rem; 
+        padding: 10px 5px; 
+        border-radius: 8px; 
+        text-align: center; 
+        cursor: pointer; 
+        border: 1px solid var(--theme-border);
+        transition: 0.2s;
+    }
+    .qty-box:hover { border-color: var(--theme-primary); }
+    .qty-box.active { 
+        background-color: var(--theme-primary) !important; 
+        color: #000 !important; 
+        border-color: var(--theme-primary);
+        font-weight: 800;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    /* --- Price Panel --- */
+    .price-panel { 
+        background: var(--theme-bg); 
+        border: 1px solid var(--theme-border); 
+        border-radius: 20px; 
+        padding: 1.5rem; 
+    }
+    .price-value { font-size: 2rem; font-weight: 900; color: var(--theme-primary); }
+    
+    .balance-badge {
+        background-color: rgba(0,0,0,0.05);
+        border: 1px solid var(--theme-border);
+        color: var(--theme-text);
+    }
+
+    /* --- Category Grid --- */
+    .category-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        margin-bottom: 20px;
+    }
+    .category-btn {
+        background: var(--theme-bg);
+        border: 1px solid var(--theme-border);
+        border-radius: 12px;
+        padding: 10px 5px;
+        text-align: center;
+        cursor: pointer;
+        transition: 0.2s;
+        color: var(--theme-text-muted);
+    }
+    .category-btn i { font-size: 1.2rem; display: block; margin-bottom: 4px; }
+    .category-btn span { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; }
+    .category-btn.active {
+        border-color: var(--theme-primary);
+        color: var(--theme-primary);
+        background: rgba(255, 215, 0, 0.05);
+    }
+
+    .locked-service-btn {
+        margin-top: 10px;
+        font-size: 0.75rem;
+        padding: 8px;
+        border-radius: 8px;
+        background: var(--theme-primary);
+        color: #000;
+        font-weight: 700;
+        text-decoration: none;
+        display: none;
+        text-align: center;
+    }
+
+    /* --- Buttons --- */
+    .btn-submit-custom {
+        background: linear-gradient(135deg, var(--theme-primary) 0%, #FFB800 100%);
+        border: none;
+        color: #000;
+        font-weight: 800;
+        padding: 14px;
+        font-size: 1rem;
+        transition: transform 0.2s;
+    }
+    .btn-submit-custom:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
+    
+    .drip-feed-box { 
+        border: 1px dashed var(--theme-border); 
+        border-radius: 12px; 
+        background: rgba(0,0,0,0.02); 
+    }
+
+    @media (max-width: 768px) {
+        .qty-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+</style>
+
+<div class="container order-wrapper">
+    <div class="mb-4 d-flex justify-content-between align-items-end">
+        <div>
+            <h3 class="fw-bold mb-1" style="color: var(--theme-primary); letter-spacing: -1px;">NEW ORDER</h3>
+            <p class="small mb-0" style="color: var(--theme-text-muted);">Select platform & service to boost instantly.</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="glass-card">
+                
+                <div class="section-header">1. Select Platform</div>
+                <span class="expand-toggle" id="toggleBtn" onclick="togglePlatforms()"> <i class="bi bi-chevron-down"></i></span>
+                
+                <div id="platformContainer">
+                    <div class="row g-2 mb-4" id="platformGrid">
+                        <div class="col-4 col-sm-3 col-md-2 platform-item-wrapper" data-platform="TikTok">
+                            <div class="platform-card" data-platform="TikTok" onclick="filterByPlatform('TikTok', this)">
+                                <i class="bi bi-tiktok"></i><span class="small">TikTok</span>
+                            </div>
+                        </div>
+                        <div class="col-4 col-sm-3 col-md-2 platform-item-wrapper" data-platform="Instagram">
+                            <div class="platform-card" data-platform="Instagram" onclick="filterByPlatform('Instagram', this)">
+                                <i class="bi bi-instagram"></i><span class="small">Instagram</span>
+                            </div>
+                        </div>
+                        <div class="col-4 col-sm-3 col-md-2 platform-item-wrapper" data-platform="Facebook">
+                            <div class="platform-card" data-platform="Facebook" onclick="filterByPlatform('Facebook', this)">
+                                <i class="bi bi-facebook"></i><span class="small">Facebook</span>
+                            </div>
+                        </div>
+                        <div class="col-4 col-sm-3 col-md-2 platform-item-wrapper" data-platform="YouTube">
+                            <div class="platform-card" data-platform="YouTube" onclick="filterByPlatform('YouTube', this)">
+                                <i class="bi bi-youtube"></i><span class="small">YouTube</span>
+                            </div>
+                        </div>
+                        <div class="col-4 col-sm-3 col-md-2 platform-item-wrapper" data-platform="WhatsApp">
+                            <div class="platform-card" data-platform="WhatsApp" onclick="filterByPlatform('WhatsApp', this)">
+                                <i class="bi bi-whatsapp"></i><span class="small">WhatsApp</span>
+                            </div>
+                        </div>
+                        <div class="col-4 col-sm-3 col-md-2 platform-item-wrapper" data-platform="All">
+                            <div class="platform-card active" data-platform="All" onclick="filterByPlatform('All', this)">
+                                <i class="bi bi-stars"></i><span class="small">All Platforms</span>
+                            </div>
+                        </div>
+
+                        {% set excluded = ['tiktok', 'instagram', 'facebook', 'youtube', 'whatsapp'] %}
+                        {% for platform in platforms %}
+                            {% set p_slug = platform.lower()|trim %}
+                            {% if p_slug not in excluded %}
+                            <div class="col-4 col-sm-3 col-md-2 platform-item-wrapper dynamic-platform" data-platform="{{ platform }}" style="display: none;">
+                                <div class="platform-card" data-platform="{{ platform }}" onclick="filterByPlatform('{{ platform }}', this)">
+                                    <i class="bi bi-{{ 'twitter-x' if p_slug in ['twitter', 'x'] else p_slug }}"></i>
+                                    <span class="small d-block text-truncate">{{ platform }}</span>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="section-header">2. Choose Category</div>
+                
+                <div id="categoryGrid" class="category-grid">
+                    <div class="category-btn" id="cat-follower" onclick="filterCategory('follower', this)">
+                        <i class="bi bi-person-plus-fill"></i><span id="label-follower">Followers</span>
+                    </div>
+                    <div class="category-btn" id="cat-like" onclick="filterCategory('like', this)">
+                        <i class="bi bi-heart-fill"></i><span>Likes</span>
+                    </div>
+                    <div class="category-btn" id="cat-view" onclick="filterCategory('view', this)">
+                        <i class="bi bi-play-circle-fill"></i><span>Views</span>
+                    </div>
+                    <div class="category-btn active" id="cat-all" onclick="filterCategory('all', this)">
+                        <i class="bi bi-grid-fill"></i><span>All Services</span>
+                    </div>
+                </div>
+
+                <form method="POST" id="orderForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold" style="color: var(--theme-text-muted);">CATEGORY</label>
+                        <div class="custom-select-wrapper" id="catWrapper">
+                            <div class="custom-select-trigger" id="catTrigger">Select Category</div>
+                            <div class="custom-options" id="catOptions">
+                                </div>
+                            <select id="category" class="hidden-select" required>
+                                <option value="" disabled selected>Select Category</option>
+                                {% for cat_key, cat_data in grouped_services.items() %}
+                                <option value="{{ cat_key }}" 
+                                        data-platform="{{ cat_data.platform }}" 
+                                        data-tier="{{ cat_data.tier }}"
+                                        data-minprice="{{ cat_data.min_price }}">
+                                    {{ cat_data.display_name }} (From: Rs {{ cat_data.min_price }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold" style="color: var(--theme-text-muted);">SPECIFIC SERVICE</label>
+                        <div class="custom-select-wrapper" id="servWrapper">
+                            <div class="custom-select-trigger" id="servTrigger">Please select category first</div>
+                            <div class="custom-options" id="servOptions">
+                                </div>
+                            <select id="service" name="service" class="hidden-select" required>
+                                <option value="" disabled selected>Select a service</option>
+                            </select>
+                        </div>
+                        <a href="{{ url_for('subscribe') }}" id="subscribeBtn" class="locked-service-btn w-100 mt-2">
+                             SUBSCRIBE PACKAGE TO UNLOCK
+                        </a>
+                    </div>
+
+                    <div class="section-header">3. Order Details</div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold" style="color: var(--theme-text-muted);">LINK / USERNAME</label>
+                        <input type="url" name="link" class="form-control" placeholder="https://..." required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold" style="color: var(--theme-text-muted);">QUANTITY</label>
+                        
+                        <div class="qty-grid" id="quantityGrid">
+                            <div class="qty-box" onclick="setQuantity(500, this)">500</div>
+                            <div class="qty-box" onclick="setQuantity(1000, this)">1000</div>
+                            <div class="qty-box" onclick="setQuantity(2000, this)">2000</div>
+                            <div class="qty-box" onclick="setQuantity(5000, this)">5000</div>
+                            <div class="qty-box" onclick="setQuantity(10000, this)">10k</div>
+                            <div class="qty-box" onclick="setQuantity(50000, this)">50k</div>
+                            <div class="qty-box" onclick="setQuantity(100000, this)">100k</div>
+                            <div class="qty-box" onclick="setQuantity(200000, this)">200k</div>
+                        </div>
+
+                        <div id="manualQuantityWrapper">
+                            <input type="number" id="quantity" name="quantity" class="form-control" placeholder="Or enter custom amount" required>
+                        </div>
+                    </div>
+
+                    <div id="dripFeedFields" style="display: none;" class="p-3 mb-4 drip-feed-box">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" name="is_drip_feed" id="enableDrip">
+                            <label class="form-check-label fw-bold" for="enableDrip" style="color: var(--theme-text);">Activate Drip-Feed</label>
+                        </div>
+                        <div id="dripInputs" style="display: none;">
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <label class="form-label small" style="color: var(--theme-text-muted);">Total Runs</label>
+                                    <input type="number" name="runs" id="runs" class="form-control" min="2">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small" style="color: var(--theme-text-muted);">Interval (Min)</label>
+                                    <input type="number" name="interval" id="interval" class="form-control" min="1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold" style="color: var(--theme-text-muted);">VERIFICATION</label>
+                        <div class="captcha-container">
+                            <div class="captcha-img-box" onclick="refreshCaptcha()">
+                                <img id="captcha-img" src="data:image/svg+xml;base64,{{ captcha_img }}" alt="captcha" width="120" height="45">
+                            </div>
+                            <button type="button" class="btn btn-refresh" onclick="refreshCaptcha()">
+                                <i class="bi bi-arrow-clockwise"></i> Refresh
+                            </button>
+                        </div>
+                        <input type="text" name="captcha_input" class="form-control" placeholder="Enter code" required autocomplete="off">
+                    </div>
+
+                    <button type="submit" id="submitBtn" class="btn btn-submit-custom w-100 rounded-3 shadow-lg">
+                        PLACE ORDER NOW
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="sticky-top" style="top: 100px; z-index: 10;">
+                <div class="price-panel glass-card">
+                    <div class="section-header">Summary</div>
+                    <div class="mb-4">
+                        <div style="color: var(--theme-text-muted); font-size: 0.75rem; font-weight: 700;">TOTAL COST</div>
+                        <div id="price" class="price-value">0.00 PKR</div>
+                        <div id="savingsDisplay" style="margin-top: 5px; font-size: 0.85rem; min-height: 20px;"></div>
+                    </div>
+                    <div class="balance-badge mb-3 d-flex justify-content-between p-2 rounded" id="balanceBadge">
+                        <span class="small" style="color: var(--theme-text-muted);">Balance:</span>
+                        <span class="fw-bold" id="currentBalanceDisplay">{{ "{:,.2f}".format(current_user.balance) }} PKR</span>
+                    </div>
+                    <div id="afterOrderBalance" class="small mb-3 text-center" style="display:none; font-weight: 600;"></div>
+                    <a href="{{ url_for('wallet') }}" class="btn btn-outline-warning w-100" style="border-color: var(--theme-primary); color: var(--theme-text);">Add Funds</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const groupedServices = {{ grouped_services|tojson }};
+    const categorySelect = document.getElementById('category');
+    const serviceSelect = document.getElementById('service');
+    const quantityInput = document.getElementById('quantity');
+    const priceDisplay = document.getElementById('price');
+    const platformContainer = document.getElementById('platformContainer');
+    const toggleBtn = document.getElementById('toggleBtn');
+    const savingsDisplay = document.getElementById('savingsDisplay');
+    const submitBtn = document.getElementById('submitBtn');
+    const balanceBadge = document.getElementById('balanceBadge');
+    const afterOrderBalance = document.getElementById('afterOrderBalance');
+    const subscribeBtn = document.getElementById('subscribeBtn');
+    const userBalance = {{ current_user.balance }};
+    const isSubscribed = {{ 'true' if current_user.is_sub_active else 'false' }};
+    
+    let activePlatform = 'All';
+    let activeCategory = 'all';
+
+    // --- Modern Custom Select Logic ---
+    function initCustomSelect(wrapperId, triggerId, optionsId, sourceSelectId, onSelectCallback) {
+        const wrapper = document.getElementById(wrapperId);
+        const trigger = document.getElementById(triggerId);
+        const optionsBox = document.getElementById(optionsId);
+        const sourceSelect = document.getElementById(sourceSelectId);
+
+        trigger.addEventListener('click', (e) => {
+            if (wrapperId === 'servWrapper' && !categorySelect.value) {
+                const catTrigger = document.getElementById('catTrigger');
+                catTrigger.parentElement.classList.add('category-alert-red', 'blink-red');
+                setTimeout(() => catTrigger.parentElement.classList.remove('blink-red'), 1200);
+                return;
+            }
+            document.querySelectorAll('.custom-select-wrapper').forEach(w => {
+                if(w !== wrapper) w.classList.remove('open');
+            });
+            wrapper.classList.toggle('open');
+            e.stopPropagation();
+        });
+
+        window.addEventListener('click', () => wrapper.classList.remove('open'));
+
+        wrapper.updateOptions = function() {
+            optionsBox.innerHTML = '';
+            Array.from(sourceSelect.options).forEach(opt => {
+                if (opt.disabled || opt.hidden) return;
+                const div = document.createElement('div');
+                div.className = 'custom-option';
+                div.innerHTML = opt.text;
+                div.dataset.value = opt.value;
+                div.onclick = function() {
+                    trigger.innerText = opt.text;
+                    sourceSelect.value = opt.value;
+                    sourceSelect.dispatchEvent(new Event('change'));
+                    wrapper.classList.remove('open');
+                    document.getElementById('catTrigger').parentElement.classList.remove('category-alert-red');
+                };
+                optionsBox.appendChild(div);
+            });
+        };
+    }
+
+    initCustomSelect('catWrapper', 'catTrigger', 'catOptions', 'category');
+    initCustomSelect('servWrapper', 'servTrigger', 'servOptions', 'service');
+
+    window.onload = function() {
+        applyFilters();
+    };
+
+    function setQuantity(val, element) {
+        quantityInput.value = val;
+        document.querySelectorAll('.qty-box').forEach(b => b.classList.remove('active'));
+        if(element) element.classList.add('active');
+        updatePrice();
+    }
+
+    function togglePlatforms() {
+        const isExpanded = platformContainer.classList.toggle('expanded');
+        toggleBtn.innerHTML = isExpanded ? 'HIDE ALL <i class="bi bi-chevron-up"></i>' : 'SHOW ALL <i class="bi bi-chevron-down"></i>';
+        document.querySelectorAll('.dynamic-platform').forEach(wrapper => {
+            wrapper.style.display = isExpanded ? 'block' : 'none';
+        });
+    }
+
+    function filterByPlatform(platform, element) {
+        activePlatform = platform;
+        document.querySelectorAll('.platform-card').forEach(c => c.classList.remove('active'));
+        if (element) element.classList.add('active');
+
+        const catFollower = document.getElementById('cat-follower');
+        const catLike = document.getElementById('cat-like');
+        const catView = document.getElementById('cat-view');
+        const catAll = document.getElementById('cat-all');
+        const labelFollower = document.getElementById('label-follower');
+
+        if (platform.toLowerCase() === 'youtube') {
+            catFollower.style.display = 'block'; labelFollower.innerText = 'Subscribers';
+        } else if (platform.toLowerCase() === 'whatsapp') {
+            catFollower.style.display = 'none'; catLike.style.display = 'none'; catView.style.display = 'none';
+            activeCategory = 'all';
+            document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+            catAll.classList.add('active');
+        } else {
+            catFollower.style.display = 'block'; labelFollower.innerText = 'Followers';
+        }
+        applyFilters();
+    }
+
+    function filterCategory(category, element) {
+        activeCategory = category;
+        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+        element.classList.add('active');
+        applyFilters();
+    }
+
+    function applyFilters() {
+        categorySelect.value = "";
+        document.getElementById('catTrigger').innerText = "Select Category";
+        document.getElementById('servTrigger').innerText = "Please select category first";
+        serviceSelect.innerHTML = '<option value="" disabled selected>Select a service</option>';
+        subscribeBtn.style.display = 'none';
+        
+        Array.from(categorySelect.options).forEach(opt => {
+            if (opt.value === "") return;
+            const optPlatform = opt.dataset.platform.toLowerCase();
+            const currentPlatform = activePlatform.toLowerCase();
+            const matchesPlatform = (activePlatform === 'All' || optPlatform === currentPlatform);
+            let matchesCategory = (activeCategory === 'all') || opt.text.toLowerCase().includes(activeCategory);
+            
+            let minPrice = parseFloat(opt.dataset.minprice) || 0;
+            let meetsPrice = true;
+            if (opt.text.toLowerCase().includes('follower') && minPrice < 120) meetsPrice = false;
+            
+            opt.hidden = !(matchesPlatform && matchesCategory && meetsPrice);
+        });
+        document.getElementById('catWrapper').updateOptions();
+        updatePrice();
+    }
+
+    categorySelect.addEventListener('change', function() {
+        const catData = groupedServices[this.value];
+        serviceSelect.innerHTML = '<option value="" disabled selected>Select a specific service</option>';
+        subscribeBtn.style.display = 'none';
+
+        if (catData && catData.services) {
+            catData.services.forEach(s => {
+                const sNameLower = s.name.toLowerCase();
+                const sRate = parseFloat(s.rate);
+                
+                if (sNameLower.includes('follower') && sRate < 100) return;
+                if (sNameLower.includes('follower') && !((sNameLower.match(/(\d+)\s*day/) && parseInt(sNameLower.match(/(\d+)\s*day/)[1]) >= 15) || sNameLower.includes('♻️') || sNameLower.includes('real'))) return;
+
+                const opt = document.createElement('option');
+                opt.value = s.service;
+                opt.setAttribute('data-rate', s.rate);
+                opt.setAttribute('data-drip', s.dripfeed);
+                
+                let isPremium = sNameLower.includes('lifetime') || sNameLower.includes('non drop');
+                if (isPremium && !isSubscribed) {
+                    opt.innerText = `🔒 [PREMIUM] ${s.name} - Rs ${s.rate}`;
+                    opt.setAttribute('data-locked', 'true');
+                } else {
+                    opt.innerText = `${s.name} - Rs ${s.rate}`;
+                }
+                serviceSelect.appendChild(opt);
+            });
+        }
+        document.getElementById('servWrapper').updateOptions();
+        checkDripSupport();
+        updatePrice();
+    });
+
+    serviceSelect.addEventListener('change', function() {
+        const selected = this.options[this.selectedIndex];
+        if (selected.getAttribute('data-locked') === 'true') {
+            subscribeBtn.style.display = 'block';
+            submitBtn.disabled = true;
+            submitBtn.innerText = "LOCKED - SUBSCRIBE TO UNLOCK";
+        } else {
+            subscribeBtn.style.display = 'none';
+            updatePrice();
+        }
+    });
+
+    function checkDripSupport() {
+        const opt = serviceSelect.selectedOptions[0];
+        document.getElementById('dripFeedFields').style.display = (opt && opt.dataset.drip === "1") ? 'block' : 'none';
+    }
+
+    document.getElementById('enableDrip').addEventListener('change', function() {
+        document.getElementById('dripInputs').style.display = this.checked ? 'block' : 'none';
+        updatePrice();
+    });
+
+    function updatePrice() {
+        const opt = serviceSelect.selectedOptions[0];
+        if (!opt || opt.value === "" || opt.getAttribute('data-locked') === 'true') {
+            priceDisplay.innerText = '0.00 PKR';
+            return;
+        }
+        const rate = parseFloat(opt.dataset.rate);
+        let qty = parseInt(quantityInput.value) || 0;
+        if (document.getElementById('enableDrip').checked) qty *= (parseInt(document.getElementById('runs').value) || 1);
+        
+        const total = parseFloat((rate * qty / 1000).toFixed(2));
+        priceDisplay.innerText = total.toFixed(2) + ' PKR';
+
+        if (total > userBalance) {
+            submitBtn.disabled = true; submitBtn.innerText = "INSUFFICIENT BALANCE";
+        } else {
+            submitBtn.disabled = false; submitBtn.innerText = "PLACE ORDER NOW";
+        }
+    }
+
+    function refreshCaptcha() {
+        fetch('/get_captcha').then(r => r.json()).then(data => {
+            document.getElementById('captcha-img').src = 'data:image/svg+xml;base64,' + data.img;
+        });
+    }
+
+    quantityInput.addEventListener('input', updatePrice);
+    document.getElementById('runs').addEventListener('input', updatePrice);
+</script>
+{% endblock %}
+

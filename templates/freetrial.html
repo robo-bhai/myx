@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}Free Trial - Engage X{% endblock %}
+
+{% block content %}
+<style>
+    /* --- Local Scope Variables mapped to Base --- */
+    :root {
+        --trial-gold: var(--primary-gold);
+        --trial-bg: var(--card-bg);
+        --trial-text: var(--text-main);
+        --trial-border: var(--glass-border);
+    }
+
+    /* Override body background for this specific page if desired, 
+       otherwise let base.html handle it. 
+       Here we ensure the container centers content perfectly. */
+    .trial-container {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+    }
+
+    /* Glass Card Styling */
+    .glass-card {
+        background: var(--trial-bg);
+        /* Blur Effect */
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        
+        /* Golden/Orange Border */
+        border: 2px solid var(--trial-gold); 
+        border-radius: 20px;
+        padding: 2.5rem;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        max-width: 500px;
+        transition: background 0.3s ease, border-color 0.3s ease;
+    }
+
+    .theme-text-highlight {
+        color: var(--trial-gold);
+    }
+
+    /* Input Fields */
+    .form-control {
+        background: var(--trial-bg); /* Adapts to theme */
+        border: 2px solid var(--trial-gold) !important;
+        color: var(--trial-text);
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 1rem;
+    }
+
+    .form-control::placeholder {
+        color: var(--text-muted);
+        opacity: 0.7;
+    }
+
+    .form-control:focus {
+        background: var(--trial-bg);
+        border-color: var(--trial-gold) !important;
+        color: var(--trial-text);
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+        outline: none;
+    }
+
+    /* Buttons */
+    .btn-gold {
+        background-color: var(--trial-gold) !important;
+        color: #000000 !important; /* Always black text for contrast on Gold/Orange */
+        font-weight: 800 !important;
+        border: none !important;
+        border-radius: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+        padding: 14px;
+        font-size: 1rem;
+    }
+
+    .btn-gold:hover {
+        opacity: 0.9;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Info Box */
+    .info-box {
+        background: rgba(255, 215, 0, 0.05); /* Subtle fill works for both */
+        border: 1px solid var(--trial-gold);
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .info-list-item {
+        color: var(--trial-text);
+        margin-bottom: 5px;
+    }
+
+    /* Captcha Styling */
+    .captcha-container {
+        background: var(--trial-bg);
+        border: 2px solid var(--trial-gold);
+        border-radius: 8px;
+        padding: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0;
+        cursor: pointer;
+        height: 100%;
+    }
+    
+    .captcha-img {
+        width: 100%;
+        height: auto;
+        max-height: 40px;
+        object-fit: contain;
+        /* Invert filter logic if needed, but usually captcha images are white background/black text 
+           or generated specifically. If generated white text on transparent, we might need a background. */
+        background: #ffffff; 
+        border-radius: 4px;
+    }
+
+    .locked-overlay {
+        text-align: center;
+        padding: 1rem;
+    }
+
+    /* Text Colors */
+    .text-main { color: var(--trial-text); }
+    .text-sub { color: var(--text-muted); }
+
+    @media (max-width: 576px) {
+        .glass-card {
+            padding: 1.5rem;
+            border-width: 1.5px;
+        }
+        h2 {
+            font-size: 1.75rem;
+        }
+    }
+</style>
+
+<div class="trial-container">
+    <div class="glass-card">
+
+        {% if used %}
+        <div class="locked-overlay">
+            <div class="mb-4">
+                <svg width="64" height="64" style="fill: var(--trial-gold);" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                </svg>
+            </div>
+            <h3 class="fw-bold mb-3 theme-text-highlight">Trial Consumed</h3>
+            <p class="text-sub mb-4">You have already used your free trial.</p>
+
+            <div class="d-grid gap-3 w-100">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-gold">Go to Dashboard</a>
+                <a href="{{ url_for('wallet') }}" class="btn btn-gold">Recharge Wallet</a>
+                <a href="{{ url_for('new_order') }}" class="btn btn-gold">Place New Order</a>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if not used %}
+        <div class="text-center mb-4">
+            <h2 class="fw-bold theme-text-highlight">🎉 Congrats!</h2>
+            <p class="text-main">You are eligible for <span class="fw-bold theme-text-highlight">100 FREE</span> TikTok followers.</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} shadow-sm small mb-3" style="border: 1px solid var(--trial-gold); color: var(--trial-text);">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold theme-text-highlight">TikTok Profile Link</label>
+                <input type="url" name="link" class="form-control" placeholder="https://www.tiktok.com/@username" required>
+            </div>
+
+            <div class="info-box mb-4">
+                <ul class="list-unstyled mb-0 small">
+                    <li class="info-list-item">✅ 100 High-Quality Followers</li>
+                    <li class="info-list-item">✅ 60 Days Refill Guarantee</li>
+                    <li class="info-list-item">✅ Instant Processing</li>
+                </ul>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold theme-text-highlight">Security Check</label>
+                <div class="row g-2">
+                    <div class="col-5">
+                        <div class="captcha-container" title="Click to refresh">
+                            <img src="data:image/svg+xml;base64,{{ captcha_img }}" alt="Captcha" class="captcha-img">
+                        </div>
+                    </div>
+                    <div class="col-7">
+                        <input type="text" name="captcha_input" class="form-control h-100" placeholder="Enter Code" required autocomplete="off">
+                    </div>
+                </div>
+                <div class="form-text text-sub small">Case-insensitive. Click image to refresh.</div>
+            </div>
+
+            <button type="submit" class="btn btn-gold w-100 py-3 mb-3">Get Followers Now</button>
+
+            <div class="d-grid text-center">
+                <a href="{{ url_for('dashboard') }}" class="text-decoration-none small fw-bold theme-text-highlight">Back to Dashboard</a>
+            </div>
+        </form>
+
+        <p class="text-center text-sub mt-4 small">
+            Offer valid one time only per profile and device.
+        </p>
+        {% endif %}
+
+    </div>
+</div>
+
+<script>
+    const captchaContainer = document.querySelector('.captcha-container');
+    if(captchaContainer) {
+        captchaContainer.addEventListener('click', function() {
+            fetch('/get_captcha')
+                .then(response => response.json())
+                .then(data => {
+                    const img = document.querySelector('.captcha-img');
+                    if(img) img.src = 'data:image/svg+xml;base64,' + data.img;
+                })
+                .catch(err => console.error('Captcha refresh failed', err));
+        });
+    }
+</script>
+{% endblock %}
