@@ -24,7 +24,12 @@ jobs:
         python -m pip install --upgrade pip
         pip install flask flask-sqlalchemy flask-login flask-wtf flask-talisman \
                     flask-limiter requests python-dotenv pymysql cryptography \
-                    xlsxwriter pywebpush urllib3 werkzeug
+                    xlsxwriter pywebpush urllib3 werkzeug gunicorn
+
+    - name: Install Cloudflared
+      run: |
+        curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+        sudo dpkg -i cloudflared.deb
 
     - name: Test MySQL Connection & Table Creation
       env:
@@ -75,3 +80,34 @@ jobs:
             assert response.status_code in [200, 302], f'App startup failed with status {response.status_code}'
             print('✅ App started successfully and handled route request!')
         "
+
+    - name: Start App & Expose via Cloudflare Tunnel (10 Mins Hold)
+      env:
+        MYSQL_USER: avnadmin
+        MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+        MYSQL_HOST: mysql-for-panel-hadi88-support.f.aivencloud.com
+        MYSQL_PORT: 13461
+        MYSQL_DB: defaultdb
+        SECRET_KEY: test_secret_key_12345
+        FLASK_ENV: production
+      run: |
+        echo "Starting Gunicorn server on port 5000..."
+        gunicorn --bind 127.0.0.1:5000 app:app &
+        
+        sleep 3
+        
+        echo "Starting Cloudflare Tunnel..."
+        cloudflared tunnel --url http://127.0.0.1:5000 > cloudflare.log 2>&1 &
+        
+        echo "Waiting for TryCloudflare link generation..."
+        sleep 8
+        
+        echo "=================================================="
+        echo "   YOUR TRYCLOUDFLARE PUBLIC TESTING LINK BELOW   "
+        echo "=================================================="
+        grep -o 'https://[-a-zA-Z0-9 connection]*\.trycloudflare\.com' cloudflare.log || cat cloudflare.log
+        echo "=================================================="
+        
+        echo "Holding runner open for 10 minutes (600 seconds) for manual testing..."
+        sleep 600
+        echo "10 minutes timer expired. Workflow completing."
