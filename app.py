@@ -70,24 +70,31 @@ csrf = CSRFProtect(app)
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-
 MYSQL_USER = os.environ.get('MYSQL_USER', 'avnadmin')
-MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', '')
-
-
-
-
+MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', 'YOUR_AIVEN_PASSWORD_HERE')
 MYSQL_HOST = os.environ.get('MYSQL_HOST', 'mysql-for-panel-hadi88-support.f.aivencloud.com')
 MYSQL_PORT = os.environ.get('MYSQL_PORT', '13461')
 MYSQL_DB = os.environ.get('MYSQL_DB', 'defaultdb')
 
-app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}?ssl_mode=REQUIRED"
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+# URI without ssl_mode parameter in query string
+app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}"
+
+# PyMySQL setup: SSL parameters provided via engine connect options
+engine_options = {
     'pool_recycle': 280,
     'pool_pre_ping': True
 }
+
+# Only pass SSL dictionary when connecting to remote servers (like Aiven), skip for local GitHub Runner (127.0.0.1)
+if MYSQL_HOST != '127.0.0.1':
+    engine_options['connect_args'] = {
+        'ssl': {'ssl_mode': 'REQUIRED'}
+    }
+
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_options
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
+
 
 
 EXCHANGE_API_KEY = '36304092d2ffecd62b291ba8'
