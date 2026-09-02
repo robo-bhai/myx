@@ -5,6 +5,7 @@ on:
     branches: [ "main", "master" ]
   pull_request:
     branches: [ "main", "master" ]
+  workflow_dispatch: # Manual trigger button (Actions tab se manual run karne ke liye)
 
 jobs:
   build-and-test:
