@@ -1,113 +1,77 @@
-name: Deploy Flask App with PostgreSQL
+name: Flask App & MySQL Database Integration Test
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ "main", "master" ]
   pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:
+    branches: [ "main", "master" ]
 
 jobs:
-  deploy:
+  build-and-test:
     runs-on: ubuntu-latest
-    
-    env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      SECRET_KEY: ${{ secrets.SECRET_KEY }}
-      API_KEY: ${{ secrets.API_KEY }}
-      EXCHANGE_API_KEY: ${{ secrets.EXCHANGE_API_KEY }}
-      VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
-      VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
-      VAPID_SENDER_EMAIL: ${{ secrets.VAPID_SENDER_EMAIL }}
-      PORT: 5000
-      FLASK_ENV: production
-      PYTHONUNBUFFERED: 1
 
     steps:
-    # ============================================================
-    # 1. CHECKOUT CODE
-    # ============================================================
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - name: Checkout Repository
+      uses: actions/checkout@v3
 
-    # ============================================================
-    # 2. SETUP PYTHON
-    # ============================================================
     - name: Set up Python 3.10
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
-        cache: 'pip'
+        python-version: "3.10"
 
-    # ============================================================
-    # 3. INSTALL ALL DEPENDENCIES
-    # ============================================================
-    - name: Install dependencies
+    - name: Install Hardcoded Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install --upgrade setuptools wheel
-        
-        # Core Flask
-        pip install Flask==2.3.3
-        pip install Flask-SQLAlchemy==3.1.1
-        pip install Flask-Login==0.6.2
-        pip install Flask-WTF==1.1.1
-        pip install Flask-Talisman==1.1.0
-        pip install Flask-Limiter==3.5.0
-        
-        # Database
-        pip install SQLAlchemy==2.0.22
-        pip install psycopg2-binary==2.9.9
-        
-        # Server & Utilities
-        pip install Werkzeug==2.3.7
-        pip install requests==2.31.0
-        pip install python-dotenv==1.0.0
-        
-        # Excel Reports
-        pip install xlsxwriter==3.1.9
-        
-        # Push Notifications
-        pip install pywebpush==1.14.1
-        
-        # Additional
-        pip install gunicorn==21.2.0
-        pip install huey==2.5.0
-        
-        # Show installed packages (for debugging)
-        pip list
+        pip install flask flask-sqlalchemy flask-login flask-wtf flask-talisman \
+                    flask-limiter requests python-dotenv pymysql cryptography \
+                    xlsxwriter pywebpush urllib3 werkzeug
 
-    # ============================================================
-    # 4. CREATE DATABASE TABLES
-    # ============================================================
-    - name: Initialize Database
+    - name: Test MySQL Connection & Table Creation
+      env:
+        MYSQL_USER: avnadmin
+        MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+        MYSQL_HOST: mysql-for-panel-hadi88-support.f.aivencloud.com
+        MYSQL_PORT: 13461
+        MYSQL_DB: defaultdb
+        SECRET_KEY: test_secret_key_12345
+        FLASK_ENV: testing
       run: |
         python -c "
-        from app import app, db
+        import os
+        from app import app, db, initialize_database
+        from sqlalchemy import inspect
+
         with app.app_context():
-            db.create_all()
-            print('✅ Database tables created successfully!')
+            print('Testing MySQL connection and initializing database...')
+            initialize_database()
+            
+            inspector = inspect(db.engine)
+            tables = inspector.get_table_names()
+            print('Successfully created tables in MySQL:', tables)
+            
+            assert len(tables) > 0, 'No tables were created!'
+            print('✅ Database connection & table creation test passed!')
         "
 
-    # ============================================================
-    # 5. RUN FLASK APP (with Gunicorn)
-    # ============================================================
-    - name: Run Flask App with Gunicorn
+    - name: Test App Startup & Basic Route Response
+      env:
+        MYSQL_USER: avnadmin
+        MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+        MYSQL_HOST: mysql-for-panel-hadi88-support.f.aivencloud.com
+        MYSQL_PORT: 13461
+        MYSQL_DB: defaultdb
+        SECRET_KEY: test_secret_key_12345
+        FLASK_ENV: testing
       run: |
-        gunicorn --bind 0.0.0.0:$PORT --workers 4 --threads 2 --timeout 120 app:app
+        python -c "
+        from app import app
 
-    # ============================================================
-    # 6. (Optional) RUN WITH PYTHON (if Gunicorn fails)
-    # ============================================================
-    # - name: Run Flask App (Fallback)
-    #   if: failure()
-    #   run: |
-    #     python app.py
-
-    # ============================================================
-    # 7. HEALTH CHECK
-    # ============================================================
-    - name: Health Check
-      run: |
-        sleep 5
-        curl -f http://localhost:$PORT/ || echo "Health check failed"
+        with app.test_client() as client:
+            print('Testing App Home Route...')
+            response = client.get('/')
+            print('HTTP Response Status Code:', response.status_code)
+            
+            # Status code 200 (Home) ya 302 (Redirect to login/dashboard) expect karte hain
+            assert response.status_code in [200, 302], f'App startup failed with status {response.status_code}'
+            print('✅ App started successfully and handled route request!')
+        "

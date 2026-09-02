@@ -67,10 +67,21 @@ Talisman(app, content_security_policy=csp_policy, force_https=is_production)
 
 csrf = CSRFProtect(app)
 
-basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'site.db')
+MYSQL_USER = os.environ.get('MYSQL_USER', 'avnadmin')
+MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', '')
+
+MYSQL_HOST = os.environ.get('MYSQL_HOST', 'mysql-for-panel-hadi88-support.f.aivencloud.com')
+MYSQL_PORT = os.environ.get('MYSQL_PORT', '13461')
+MYSQL_DB = os.environ.get('MYSQL_DB', 'defaultdb')
+
+app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}?ssl_mode=REQUIRED"
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_recycle': 280,
+    'pool_pre_ping': True
+}
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
+
 
 EXCHANGE_API_KEY = '36304092d2ffecd62b291ba8'
 EXCHANGE_URL = f"https://v6.exchangerate-api.com/v6/{EXCHANGE_API_KEY}/latest/USD"
