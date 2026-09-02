@@ -76,12 +76,11 @@ jobs:
             response = client.get('/')
             print('HTTP Response Status Code:', response.status_code)
             
-            # Status code 200 (Home) ya 302 (Redirect to login/dashboard) expect karte hain
             assert response.status_code in [200, 302], f'App startup failed with status {response.status_code}'
             print('✅ App started successfully and handled route request!')
         "
 
-    - name: Start App & Expose via Cloudflare Tunnel (10 Mins Hold)
+    - name: Run App with Static Cloudflare Domain Tunnel
       env:
         MYSQL_USER: avnadmin
         MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
@@ -90,24 +89,19 @@ jobs:
         MYSQL_DB: defaultdb
         SECRET_KEY: test_secret_key_12345
         FLASK_ENV: production
+        CLOUDFLARE_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
       run: |
         echo "Starting Gunicorn server on port 5000..."
         gunicorn --bind 127.0.0.1:5000 app:app &
         
         sleep 3
         
-        echo "Starting Cloudflare Tunnel..."
-        cloudflared tunnel --url http://127.0.0.1:5000 > cloudflare.log 2>&1 &
-        
-        echo "Waiting for TryCloudflare link generation..."
-        sleep 8
+        echo "Starting Cloudflare Named Tunnel..."
+        cloudflared tunnel run --token $CLOUDFLARE_TUNNEL_TOKEN > cloudflare.log 2>&1 &
         
         echo "=================================================="
-        echo "   YOUR TRYCLOUDFLARE PUBLIC TESTING LINK BELOW   "
-        echo "=================================================="
-        grep -o 'https://[-a-zA-Z0-9 connection]*\.trycloudflare\.com' cloudflare.log || cat cloudflare.log
+        echo "   APP ACCESSIBLE VIA YOUR CUSTOM STATIC DOMAIN   "
         echo "=================================================="
         
-        echo "Holding runner open for 10 minutes (600 seconds) for manual testing..."
+        echo "Holding runner open for 10 minutes (600 seconds)..."
         sleep 600
-        echo "10 minutes timer expired. Workflow completing."
