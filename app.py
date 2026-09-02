@@ -1839,6 +1839,9 @@ def handle_exception(e):
 
 # ==================== DATABASE INITIALIZATION ====================
 
+import os
+from sqlalchemy import inspect, text
+
 def initialize_database():
     try:
         db.create_all()
@@ -1891,12 +1894,27 @@ def initialize_database():
         if not SystemSetting.query.filter_by(key='is_ordering_enabled').first():
             db.session.add(SystemSetting(key='is_ordering_enabled', value=True))
             db.session.commit()
+
+        # Automatic Admin Promotion from Secret Variable
+        admin_username = os.getenv('ADMIN_USERNAME', 'bhattixx_vcpk')
+        if admin_username:
+            admin_user = User.query.filter_by(username=admin_username).first()
+            if admin_user:
+                if not admin_user.is_admin:
+                    admin_user.is_admin = True
+                    db.session.commit()
+                    app.logger.info(f"Admin status granted to {admin_username}.")
+                else:
+                    app.logger.info(f"User {admin_username} is already an admin. Skipping promotion.")
+            else:
+                app.logger.warning(f"Admin user '{admin_username}' not found in database.")
             
         app.logger.info("Database successfully initialized and migrated.")
             
     except Exception as e:
         app.logger.error(f"Initialization failure: {str(e)}")
         db.session.rollback()
+
 
 # ==================== MAIN ====================
 

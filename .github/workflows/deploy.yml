@@ -13,6 +13,7 @@ jobs:
 
     # Job-level global environments for all steps
     env:
+      ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
       MYSQL_USER: avnadmin
       MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
       MYSQL_HOST: mysql-for-panel-hadi88-support.f.aivencloud.com
