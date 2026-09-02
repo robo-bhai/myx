@@ -7,6 +7,11 @@ on:
     branches: [ "main", "master" ]
   workflow_dispatch:
 
+# GitHub API se active workflows cancel karne ke liye required permissions
+permissions:
+  actions: write
+  contents: read
+
 concurrency:
   group: global-runner-lock
   cancel-in-progress: true
