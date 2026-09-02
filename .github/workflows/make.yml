@@ -1,7 +1,7 @@
 name: Make User Admin
 
 on:
-  workflow_dispatch: # Iss se aap GitHub web UI se manually run kar sakeinge
+  workflow_dispatch:
 
 jobs:
   run-script:
@@ -20,9 +20,18 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        pip install pywebpush
 
     - name: Run Admin Script
       env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }} # Agar aap env secrets use kar rahe hain
+        FLASK_SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY }}
+        GODOFPANEL_API_KEY: ${{ secrets.GODOFPANEL_API_KEY }}
+        GODOFPANEL_API_URL: ${{ secrets.GODOFPANEL_API_URL }}
+        EXCHANGE_API_KEY: ${{ secrets.EXCHANGE_API_KEY }}
+        MYSQL_USER: ${{ secrets.MYSQL_USER }}
+        MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+        MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
+        MYSQL_PORT: ${{ secrets.MYSQL_PORT }}
+        MYSQL_DB: ${{ secrets.MYSQL_DB }}
       run: |
         python make_admin.py
