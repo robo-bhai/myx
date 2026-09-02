@@ -76,11 +76,12 @@ jobs:
             response = client.get('/')
             print('HTTP Response Status Code:', response.status_code)
             
+            # Status code 200 (Home) ya 302 (Redirect to login/dashboard) expect karte hain
             assert response.status_code in [200, 302], f'App startup failed with status {response.status_code}'
             print('✅ App started successfully and handled route request!')
         "
 
-    - name: Run App with Static Cloudflare Domain Tunnel
+    - name: Start App & Expose via Static Cloudflare Tunnel (10 Mins Hold)
       env:
         MYSQL_USER: avnadmin
         MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
@@ -96,12 +97,15 @@ jobs:
         
         sleep 3
         
-        echo "Starting Cloudflare Named Tunnel..."
+        echo "Starting Persistent Cloudflare Tunnel..."
         cloudflared tunnel run --token $CLOUDFLARE_TUNNEL_TOKEN > cloudflare.log 2>&1 &
         
+        sleep 5
+        
         echo "=================================================="
-        echo "   APP ACCESSIBLE VIA YOUR CUSTOM STATIC DOMAIN   "
+        echo "   APP IS LIVE ON YOUR STATIC CLOUDFLARE DOMAIN   "
         echo "=================================================="
         
-        echo "Holding runner open for 10 minutes (600 seconds)..."
+        echo "Holding runner open for 10 minutes (600 seconds) for manual testing..."
         sleep 600
+        echo "10 minutes timer expired. Workflow completing."
