@@ -5,11 +5,26 @@ on:
     branches: [ "main", "master" ]
   pull_request:
     branches: [ "main", "master" ]
-  workflow_dispatch: # Manual trigger button
+  workflow_dispatch:
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+
+    # Job-level global environments for all steps
+    env:
+      MYSQL_USER: avnadmin
+      MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+      MYSQL_HOST: mysql-for-panel-hadi88-support.f.aivencloud.com
+      MYSQL_PORT: 13461
+      MYSQL_DB: defaultdb
+      SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY }}
+      FLASK_SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY }}
+      GODOFPANEL_API_KEY: ${{ secrets.GODOFPANEL_API_KEY }}
+      GODOFPANEL_API_URL: ${{ secrets.GODOFPANEL_API_URL }}
+      EXCHANGE_API_KEY: ${{ secrets.EXCHANGE_API_KEY }}
+      CLOUDFLARE_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
+      FLASK_ENV: production
 
     steps:
     - name: Checkout Repository
@@ -33,18 +48,6 @@ jobs:
         sudo dpkg -i cloudflared.deb
 
     - name: Test MySQL Connection & Table Creation
-      env:
-        MYSQL_USER: avnadmin
-        MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
-        MYSQL_HOST: mysql-for-panel-hadi88-support.f.aivencloud.com
-        MYSQL_PORT: 13461
-        MYSQL_DB: defaultdb
-        SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY }}
-        FLASK_SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY }}
-        GODOFPANEL_API_KEY: ${{ secrets.GODOFPANEL_API_KEY }}
-        GODOFPANEL_API_URL: ${{ secrets.GODOFPANEL_API_URL }}
-        EXCHANGE_API_KEY: ${{ secrets.EXCHANGE_API_KEY }}
-        FLASK_ENV: testing
       run: |
         python -c "
         import os
@@ -64,18 +67,6 @@ jobs:
         "
 
     - name: Test App Startup & Basic Route Response
-      env:
-        MYSQL_USER: avnadmin
-        MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
-        MYSQL_HOST: mysql-for-panel-hadi88-support.f.aivencloud.com
-        MYSQL_PORT: 13461
-        MYSQL_DB: defaultdb
-        SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY }}
-        FLASK_SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY }}
-        GODOFPANEL_API_KEY: ${{ secrets.GODOFPANEL_API_KEY }}
-        GODOFPANEL_API_URL: ${{ secrets.GODOFPANEL_API_URL }}
-        EXCHANGE_API_KEY: ${{ secrets.EXCHANGE_API_KEY }}
-        FLASK_ENV: testing
       run: |
         python -c "
         from app import app
@@ -85,25 +76,11 @@ jobs:
             response = client.get('/')
             print('HTTP Response Status Code:', response.status_code)
             
-            # Status code 200 (Home) ya 302 (Redirect to login/dashboard) expect karte hain
             assert response.status_code in [200, 302], f'App startup failed with status {response.status_code}'
             print('✅ App started successfully and handled route request!')
         "
 
     - name: Start App & Expose via Static Cloudflare Tunnel (10 Mins Hold)
-      env:
-        MYSQL_USER: avnadmin
-        MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
-        MYSQL_HOST: mysql-for-panel-hadi88-support.f.aivencloud.com
-        MYSQL_PORT: 13461
-        MYSQL_DB: defaultdb
-        SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY }}
-        FLASK_SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY }}
-        GODOFPANEL_API_KEY: ${{ secrets.GODOFPANEL_API_KEY }}
-        GODOFPANEL_API_URL: ${{ secrets.GODOFPANEL_API_URL }}
-        EXCHANGE_API_KEY: ${{ secrets.EXCHANGE_API_KEY }}
-        FLASK_ENV: production
-        CLOUDFLARE_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
       run: |
         echo "Starting Gunicorn server on port 5000..."
         gunicorn --bind 127.0.0.1:5000 app:app &
