@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: global-runner-lock
   cancel-in-progress: true
 
 jobs:
@@ -32,6 +32,12 @@ jobs:
       FLASK_ENV: production
 
     steps:
+    - name: Cancel ALL Active Runs in Repository
+      uses: styfle/cancel-workflow-action@0.12.1
+      with:
+        access_token: ${{ secrets.GITHUB_TOKEN }}
+        all_but_latest: true
+
     - name: Checkout Repository
       uses: actions/checkout@v3
 
