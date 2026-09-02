@@ -7,9 +7,15 @@ on:
     branches: [ "main", "master" ]
   workflow_dispatch:
 
+# Agar naya run start ho toh pehle se chalte hue run ko automatically cancel kar dega
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 360 # 20,000 seconds (5.5 hours) ke liye job timeout enable karne ke liye
 
     # Job-level global environments for all steps
     env:
@@ -81,7 +87,7 @@ jobs:
             print('✅ App started successfully and handled route request!')
         "
 
-    - name: Start App & Expose via Static Cloudflare Tunnel (10 Mins Hold)
+    - name: Start App & Expose via Static Cloudflare Tunnel (20k Secs Hold)
       run: |
         echo "Starting Gunicorn server on port 5000..."
         gunicorn --bind 127.0.0.1:5000 app:app &
@@ -97,6 +103,6 @@ jobs:
         echo "   APP IS LIVE ON YOUR STATIC CLOUDFLARE DOMAIN   "
         echo "=================================================="
         
-        echo "Holding runner open for 5 minutes (600 seconds) for manual testing..."
+        echo "Holding runner open for 20,000 seconds..."
         sleep 20000
-        echo "10 minutes timer expired. Workflow completing."
+        echo "20,000 seconds timer expired. Workflow completing."
