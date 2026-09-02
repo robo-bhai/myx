@@ -67,6 +67,10 @@ jobs:
         MYSQL_PORT: 13461
         MYSQL_DB: defaultdb
         SECRET_KEY: test_secret_key_12345
+        GODOFPANEL_API_KEY: ${{ secrets.GODOFPANEL_API_KEY }}
+        GODOFPANEL_API_URL: ${{ secrets.GODOFPANEL_API_URL }}
+        EXCHANGE_API_KEY: ${{ secrets.EXCHANGE_API_KEY }}
+        FLASK_SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY }}
         FLASK_ENV: testing
       run: |
         python -c "

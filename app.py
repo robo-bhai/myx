@@ -37,7 +37,15 @@ from pywebpush import webpush, WebPushException
 load_dotenv()
 app = Flask(__name__)
 
-app.config['SECRET_KEY'] = 'b3cf2c6a9c6837839af5e63f42e108590992ea12bf479f286b82169a6ec36bf4'
+import os
+
+# Flask SECRET_KEY ko Environment Variable se load karein
+app.config['SECRET_KEY'] = os.environ.get("FLASK_SECRET_KEY")
+
+# Production safety check
+if not app.config['SECRET_KEY']:
+    raise ValueError("CRITICAL ERROR: FLASK_SECRET_KEY Environment Variable set nahi hai!")
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -97,8 +105,21 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
 
 
-EXCHANGE_API_KEY = '36304092d2ffecd62b291ba8'
-EXCHANGE_URL = f"https://v6.exchangerate-api.com/v6/{EXCHANGE_API_KEY}/latest/USD"
+import os
+
+# Secrets se API Key aur URL load karein
+EXCHANGE_API_KEY = os.environ.get("EXCHANGE_API_KEY")
+
+# URL dynamic key ke sath GitHub Secrets se banega
+if EXCHANGE_API_KEY:
+    EXCHANGE_URL = f"https://v6.exchangerate-api.com/v6/{EXCHANGE_API_KEY}/latest/USD"
+else:
+    EXCHANGE_URL = os.environ.get("EXCHANGE_URL")
+
+# Production safety check
+if not EXCHANGE_API_KEY:
+    raise ValueError("CRITICAL ERROR: EXCHANGE_API_KEY Environment Variable set nahi hai!")
+
 
 app.config.update(
     SESSION_COOKIE_SECURE=True,
@@ -110,8 +131,16 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-API_KEY = '52553de52e00c6b627c8405ccac5f272'
-API_URL = "https://godofpanel.com/api/v2"
+import os
+
+# Sirf Environment Variables / Secrets se load hoga
+API_KEY = os.environ.get("GODOFPANEL_API_KEY")
+API_URL = os.environ.get("GODOFPANEL_API_URL")
+
+# Production safety check (Agar secret set nahi hoga toh server crash/warn kar dega)
+if not API_KEY or not API_URL:
+    raise ValueError("CRITICAL ERROR: GODOFPANEL_API_KEY ya GODOFPANEL_API_URL Environment Variable set nahi hai!")
+
 
 @app.teardown_appcontext
 def shutdown_session(exception=None):
