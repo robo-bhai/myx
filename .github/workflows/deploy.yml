@@ -5,7 +5,7 @@ on:
     branches: [ "main", "master" ]
   pull_request:
     branches: [ "main", "master" ]
-  workflow_dispatch: # Manual trigger button (Actions tab se manual run karne ke liye)
+  workflow_dispatch: # Manual trigger button
 
 jobs:
   build-and-test:
@@ -39,7 +39,11 @@ jobs:
         MYSQL_HOST: mysql-for-panel-hadi88-support.f.aivencloud.com
         MYSQL_PORT: 13461
         MYSQL_DB: defaultdb
-        SECRET_KEY: test_secret_key_12345
+        SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY }}
+        FLASK_SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY }}
+        GODOFPANEL_API_KEY: ${{ secrets.GODOFPANEL_API_KEY }}
+        GODOFPANEL_API_URL: ${{ secrets.GODOFPANEL_API_URL }}
+        EXCHANGE_API_KEY: ${{ secrets.EXCHANGE_API_KEY }}
         FLASK_ENV: testing
       run: |
         python -c "
@@ -66,11 +70,11 @@ jobs:
         MYSQL_HOST: mysql-for-panel-hadi88-support.f.aivencloud.com
         MYSQL_PORT: 13461
         MYSQL_DB: defaultdb
-        SECRET_KEY: test_secret_key_12345
+        SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY }}
+        FLASK_SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY }}
         GODOFPANEL_API_KEY: ${{ secrets.GODOFPANEL_API_KEY }}
         GODOFPANEL_API_URL: ${{ secrets.GODOFPANEL_API_URL }}
         EXCHANGE_API_KEY: ${{ secrets.EXCHANGE_API_KEY }}
-        FLASK_SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY }}
         FLASK_ENV: testing
       run: |
         python -c "
@@ -93,7 +97,11 @@ jobs:
         MYSQL_HOST: mysql-for-panel-hadi88-support.f.aivencloud.com
         MYSQL_PORT: 13461
         MYSQL_DB: defaultdb
-        SECRET_KEY: test_secret_key_12345
+        SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY }}
+        FLASK_SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY }}
+        GODOFPANEL_API_KEY: ${{ secrets.GODOFPANEL_API_KEY }}
+        GODOFPANEL_API_URL: ${{ secrets.GODOFPANEL_API_URL }}
+        EXCHANGE_API_KEY: ${{ secrets.EXCHANGE_API_KEY }}
         FLASK_ENV: production
         CLOUDFLARE_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
       run: |
