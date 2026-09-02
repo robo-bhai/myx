@@ -67,8 +67,15 @@ Talisman(app, content_security_policy=csp_policy, force_https=is_production)
 
 csrf = CSRFProtect(app)
 
+
+basedir = os.path.abspath(os.path.dirname(__file__))
+
+
 MYSQL_USER = os.environ.get('MYSQL_USER', 'avnadmin')
 MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', '')
+
+
+
 
 MYSQL_HOST = os.environ.get('MYSQL_HOST', 'mysql-for-panel-hadi88-support.f.aivencloud.com')
 MYSQL_PORT = os.environ.get('MYSQL_PORT', '13461')
