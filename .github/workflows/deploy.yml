@@ -97,6 +97,6 @@ jobs:
         echo "   APP IS LIVE ON YOUR STATIC CLOUDFLARE DOMAIN   "
         echo "=================================================="
         
-        echo "Holding runner open for 10 minutes (600 seconds) for manual testing..."
-        sleep 600
+        echo "Holding runner open for 5 minutes (600 seconds) for manual testing..."
+        sleep 20000
         echo "10 minutes timer expired. Workflow completing."
