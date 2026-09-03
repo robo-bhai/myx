@@ -41,14 +41,14 @@ jobs:
         echo "✅ Encrypted backup generated successfully."
 
     - name: Install & Setup Rclone
+      env:
+        RCLONE_CONFIG_DATA: ${{ secrets.RCLONE_CONFIG_DATA }}
       run: |
         sudo apt-get update && sudo apt-get install -y rclone jq
         mkdir -p ~/.config/rclone
         
-        # 'EOF' in single quotes prevents quote stripping and JSON corruption
-        cat << 'EOF' > ~/.config/rclone/rclone.conf
-${{ secrets.RCLONE_CONFIG_DATA }}
-EOF
+        # Write config via environment variable safely
+        echo "$RCLONE_CONFIG_DATA" > ~/.config/rclone/rclone.conf
         
         # Verify Rclone configuration
         rclone listremotes
