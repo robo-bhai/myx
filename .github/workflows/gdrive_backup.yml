@@ -44,7 +44,11 @@ jobs:
       run: |
         sudo apt-get update && sudo apt-get install -y rclone jq
         mkdir -p ~/.config/rclone
-        echo "${{ secrets.RCLONE_CONFIG_DATA }}" > ~/.config/rclone/rclone.conf
+        
+        # 'EOF' in single quotes prevents quote stripping and JSON corruption
+        cat << 'EOF' > ~/.config/rclone/rclone.conf
+${{ secrets.RCLONE_CONFIG_DATA }}
+EOF
         
         # Verify Rclone configuration
         rclone listremotes
