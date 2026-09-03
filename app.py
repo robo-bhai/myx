@@ -78,11 +78,15 @@ csrf = CSRFProtect(app)
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-MYSQL_USER = os.environ.get('MYSQL_USER', 'avnadmin')
-MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', 'YOUR_AIVEN_PASSWORD_HERE')
-MYSQL_HOST = os.environ.get('MYSQL_HOST', 'mysql-for-panel-hadi88-support.f.aivencloud.com')
+MYSQL_USER = os.environ.get('MYSQL_USER')
+MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD')
+MYSQL_HOST = os.environ.get('MYSQL_HOST')
 MYSQL_PORT = os.environ.get('MYSQL_PORT', '13461')
-MYSQL_DB = os.environ.get('MYSQL_DB', 'defaultdb')
+MYSQL_DB = os.environ.get('MYSQL_DB')
+
+if not all([MYSQL_USER, MYSQL_PASSWORD, MYSQL_HOST, MYSQL_DB]):
+    raise ValueError("CRITICAL ERROR: Database environment variables missing!")
+
 
 # URI without ssl_mode parameter in query string
 app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}"
