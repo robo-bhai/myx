@@ -71,7 +71,15 @@ csp_policy = {
     'frame-ancestors': '\'none\''
 }
 
-Talisman(app, content_security_policy=csp_policy, force_https=is_production)
+# Talisman config ko force HTTPS par fix karein
+Talisman(
+    app,
+    content_security_policy=csp_policy,
+    force_https=True, # Production check ke bajaye hamesha force karein
+    strict_transport_security=True,
+    session_cookie_secure=True
+)
+
 
 csrf = CSRFProtect(app)
 
