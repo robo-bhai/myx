@@ -21,7 +21,7 @@ MYSQL_DB = os.environ.get('MYSQL_DB')
 if not all([MYSQL_USER, MYSQL_PASSWORD, MYSQL_HOST, MYSQL_DB]):
     raise ValueError("CRITICAL ERROR: Database environment variables missing!")
 
-ENCRYPTION_SECRET = os.environ.get('BACKUP_SECRET_KEY', 'SuperStrongSecretKey#2026')
+ENCRYPTION_SECRET = os.environ.get('BACKUP_SECRET_KEY')
 
 # --- 2. ENGINE BUILDER ---
 def get_db_engine():
