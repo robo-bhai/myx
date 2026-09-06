@@ -23,17 +23,18 @@ jobs:
 
     env:
       ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
-      MYSQL_USER: avnadmin
+      MYSQL_USER: ${{ secrets.DB_USER }}
       MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
-      MYSQL_HOST: mysql-for-panel-hadi88-support.f.aivencloud.com
-      MYSQL_PORT: 13461
-      MYSQL_DB: defaultdb
+      MYSQL_HOST: ${{ secrets.DB_HOST }}
+      MYSQL_PORT: ${{ secrets.DB_PORT }}
+      MYSQL_DB: ${{ secrets.DB_NAME }}
       SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY }}
       FLASK_SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY }}
       SERVICE_ENC: ${{ secrets.SERVICE_ENC }}
-      Service_w: ${{ secrets.Service_w }}
+      Service_w: ${{ secrets.SERVICE_W }}
       EXCHANGE_API_KEY: ${{ secrets.EXCHANGE_API_KEY }}
       CLOUDFLARE_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
+
       FLASK_ENV: production
 
     steps:
