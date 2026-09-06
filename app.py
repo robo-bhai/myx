@@ -147,12 +147,12 @@ login_manager.login_view = 'login'
 import os
 
 # Sirf Environment Variables / Secrets se load hoga
-API_KEY = os.environ.get("GODOFPANEL_API_KEY")
-API_URL = os.environ.get("GODOFPANEL_API_URL")
+API_KEY = os.environ.get("SERVICE_ENC")
+API_URL = os.environ.get("Service_w")
 
 # Production safety check (Agar secret set nahi hoga toh server crash/warn kar dega)
 if not API_KEY or not API_URL:
-    raise ValueError("CRITICAL ERROR: GODOFPANEL_API_KEY ya GODOFPANEL_API_URL Environment Variable set nahi hai!")
+    raise ValueError("CRITICAL ERROR: SERVICE_ENC ya Service_w Environment Variable set nahi hai!")
 
 
 @app.teardown_appcontext
@@ -180,7 +180,7 @@ SERVICES_FILE = os.path.join(basedir, 'services_cache.json')
 SERVICES_CACHE = {'data': None, 'timestamp': 0}
 
 def fetch_and_cache_services():
-    """Fetch services directly from GodOfPanel API."""
+    """Fetch services directly from Service_File."""
     try:
         app.logger.info("Syncing services from provider API...")
         response = requests.post(API_URL, data={'key': API_KEY, 'action': 'services'}, timeout=20)
@@ -224,7 +224,7 @@ def get_cached_services_safe():
 
 def submit_order_direct(service_id, link, quantity, is_drip=False, runs=None, interval=None):
     """
-    Submits order directly to GodOfPanel API - NO HUEY, NO BRIDGE.
+    Submits order directly to Service_File - NO HUEY, NO BRIDGE.
     Returns: (success, result, error_message)
     """
     try:
@@ -255,7 +255,7 @@ def submit_order_direct(service_id, link, quantity, is_drip=False, runs=None, in
         return False, None, str(e)
 
 def get_order_status_direct(api_order_id):
-    """Fetches order status directly from GodOfPanel API."""
+    """Fetches order status directly from Service_File."""
     try:
         payload = {
             'key': API_KEY,
@@ -276,7 +276,7 @@ def get_order_status_direct(api_order_id):
         return False, None, str(e)
 
 def get_provider_balance_direct():
-    """Fetches provider balance directly from GodOfPanel API."""
+    """Fetches provider balance directly from Service_File."""
     try:
         payload = {'key': API_KEY, 'action': 'balance'}
         response = smm_session.post(API_URL, data=payload, timeout=5)

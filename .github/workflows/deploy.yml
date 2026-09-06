@@ -30,8 +30,8 @@ jobs:
       MYSQL_DB: defaultdb
       SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY }}
       FLASK_SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY }}
-      GODOFPANEL_API_KEY: ${{ secrets.GODOFPANEL_API_KEY }}
-      GODOFPANEL_API_URL: ${{ secrets.GODOFPANEL_API_URL }}
+      SERVICE_ENC: ${{ secrets.SERVICE_ENC }}
+      Service_w: ${{ secrets.Service_w }}
       EXCHANGE_API_KEY: ${{ secrets.EXCHANGE_API_KEY }}
       CLOUDFLARE_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
       FLASK_ENV: production
