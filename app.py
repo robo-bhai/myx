@@ -155,6 +155,7 @@ if not API_KEY or not API_URL:
     raise ValueError("CRITICAL ERROR: SERVICE_ENC ya Service_w Environment Variable set nahi hai!")
 
 
+
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     db.session.remove()
@@ -221,6 +222,14 @@ def get_cached_services_safe():
 # ============================================================
 #                    DIRECT API FUNCTIONS
 # ============================================================
+import hashlib
+
+def get_device_fingerprint():
+    # IP, User-Agent, Architecture, Platform aur Language ko mila kar strong hash banata hai
+    return hashlib.sha256(f"{request.headers.get('CF-Connecting-IP', request.remote_addr)}|{request.headers.get('User-Agent', '')}|{request.headers.get('Sec-Ch-Ua', '')}|{request.headers.get('Sec-Ch-Ua-Platform', '')}|{request.headers.get('Accept-Language', '')}".encode()).hexdigest()
+
+
+
 
 def submit_order_direct(service_id, link, quantity, is_drip=False, runs=None, interval=None):
     """
@@ -524,10 +533,9 @@ def register():
             flash('All fields are required.', 'danger')
             return redirect(url_for('register'))
         
-        user_agent = request.headers.get('User-Agent', 'unknown')
-        accept_lang = request.headers.get('Accept-Language', 'unknown')
-        fingerprint_raw = f"{request.remote_addr}|{user_agent}|{accept_lang}"
-        device_hash = hashlib.sha256(fingerprint_raw.encode()).hexdigest()
+        # New strong device fingerprinting call
+        device_hash = get_device_fingerprint()
+
 
         device_account_count = User.query.filter_by(device_fingerprint=device_hash).count()
         if device_account_count >= 2:
@@ -954,10 +962,8 @@ def status():
 @app.route('/freetrial', methods=['GET', 'POST'])
 @login_required
 def freetrial():
-    user_agent = request.headers.get('User-Agent', 'unknown')
-    accept_lang = request.headers.get('Accept-Language', 'unknown')
-    fingerprint_raw = f"{request.remote_addr}|{user_agent}|{accept_lang}"
-    device_hash = hashlib.sha256(fingerprint_raw.encode()).hexdigest()
+    # Strong device fingerprint hash (1-line call)
+    device_hash = get_device_fingerprint()
 
     if current_user.new_f and not current_user.is_admin:
         return render_template('freetrial.html', used=True)
