@@ -101,11 +101,19 @@ jobs:
 
     - name: Start App & Expose via Static Cloudflare Tunnel
       run: |
-        echo "Starting Gunicorn server on port 5000..."
-        nohup gunicorn --bind 127.0.0.1:5000 app:app > gunicorn.log 2>&1 &
-        
+        echo "Starting Gunicorn server (5 Workers, 2 Threads)..."
+        nohup gunicorn --workers 5 --threads 2 --timeout 120 --bind 127.0.0.1:5000 app:app > gunicorn.log 2>&1 &
+
         sleep 3
         
+        # Health check to ensure Gunicorn started properly
+        if ! curl -s http://127.0.0.1:5000/ > /dev/null; then
+          echo "❌ Gunicorn failed to start! Displaying logs:"
+          cat gunicorn.log
+          exit 1
+        fi
+        echo "✅ Gunicorn is running healthily on local port 5000!"
+
         echo "Starting Persistent Cloudflare Tunnel..."
         nohup cloudflared tunnel run --token "$CLOUDFLARE_TUNNEL_TOKEN" > cloudflare.log 2>&1 &
         
@@ -115,6 +123,6 @@ jobs:
         echo "   APP IS LIVE ON YOUR STATIC CLOUDFLARE DOMAIN   "
         echo "=================================================="
         
-        echo "Holding runner open for 18,000 seconds (5 hours)..."
-        sleep 18000
-        echo "Timer expired. Workflow completing."
+        echo "Holding runner open safely for 17,000 seconds (~4.7 hours)..."
+        sleep 17000
+        echo "Timer expired. Workflow completing gracefully."
