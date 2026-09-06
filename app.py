@@ -1909,7 +1909,7 @@ def initialize_database():
             db.session.commit()
 
         # Automatic Admin Promotion from Secret Variable
-        admin_username = os.getenv('ADMIN_USERNAME', 'bhattixx_vcpk')
+        admin_username = os.getenv('ADMIN_USERNAME')
         if admin_username:
             admin_user = User.query.filter_by(username=admin_username).first()
             if admin_user:
