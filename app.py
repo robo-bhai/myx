@@ -1443,7 +1443,7 @@ def admin_deposits():
 @app.route('/admin/deposits/<int:deposit_id>/<action>')
 @login_required
 @admin_required
-#@admin_secret_key_required
+@admin_secret_key_required
 def update_deposit_status(deposit_id, action):
     deposit = DepositRequest.query.filter_by(id=deposit_id).with_for_update().first_or_404()
     if deposit.status != 'pending':
