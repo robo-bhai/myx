@@ -1349,6 +1349,7 @@ if not HADI_PATH:
 
 @login_required
 @admin_required
+@admin_secret_key_required
 def hadi_dashboard():
     try:
         total_users = User.query.count()
@@ -1546,6 +1547,7 @@ def update_exchange_manual():
 @app.route('/reset_pan')
 @login_required
 @admin_required
+@admin_secret_key_required
 def clear_services_cache():
     global SERVICES_CACHE
     SERVICES_CACHE['data'] = None
