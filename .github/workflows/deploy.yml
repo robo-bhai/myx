@@ -22,6 +22,7 @@ jobs:
     timeout-minutes: 350
 
     env:
+      HADI_PATH: ${{ secrets.HADI_PATH }}
       ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
       MYSQL_USER: ${{ secrets.DB_USER }}
       MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}

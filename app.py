@@ -1304,7 +1304,16 @@ def refer():
 
 # ==================== ADMIN ROUTES ====================
 
-@app.route('/hadi_path', methods=['GET', 'POST'])
+import os
+
+HADI_PATH = os.getenv('HADI_PATH')
+
+# Explicit check: Secret lazmi majood hona chahiye
+if not HADI_PATH:
+    raise RuntimeError("CRITICAL ERROR: 'HADI_PATH' secret environment variable mein missing hai!")
+
+@app.route(HADI_PATH, methods=['GET', 'POST'])
+
 @login_required
 @admin_required
 def hadi_dashboard():
