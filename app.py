@@ -1303,6 +1303,39 @@ def refer():
     return render_template("refer.html", referral_link=referral_link)
 
 # ==================== ADMIN ROUTES ====================
+import os
+from functools import wraps
+from flask import request, session, abort
+
+# Hardcoded string bilkul khatam - strictly environment / GitHub Secrets se load hoga
+ADMIN_ACCESS_KEY = os.environ.get('ADMIN_ACCESS_KEY')
+
+def admin_secret_key_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Safety Check: Agar GitHub Secret environment variable set hi nahi hua
+        if not ADMIN_ACCESS_KEY:
+            # Code fail-safe rahega aur kisi ko entry nahi dega
+            abort(404)
+
+        # 1. URL Query Parameter se key check karein (?key=...)
+        provided_key = request.args.get('key')
+        
+        # 2. Agar URL mein correct secret key di gayi hai
+        if provided_key and provided_key == ADMIN_ACCESS_KEY:
+            session['admin_key_verified'] = True
+            return f(*args, **kwargs)
+        
+        # 3. Agar session mein pehle se key verified hai
+        if session.get('admin_key_verified') == True:
+            return f(*args, **kwargs)
+            
+        # 4. Agar key nahi di gayi ya mismatch hai, toh 404 return karein
+        abort(404)
+        
+    return decorated_function
+
+
 
 import os
 
@@ -1401,6 +1434,7 @@ def hadi_dashboard():
 @app.route('/admin/deposits')
 @login_required
 @admin_required
+@admin_secret_key_required
 def admin_deposits():
     deposits = DepositRequest.query.order_by(DepositRequest.timestamp.desc()).all()
     return render_template('admin_deposits.html', deposits=deposits)
@@ -1408,6 +1442,7 @@ def admin_deposits():
 @app.route('/admin/deposits/<int:deposit_id>/<action>')
 @login_required
 @admin_required
+@admin_secret_key_required
 def update_deposit_status(deposit_id, action):
     deposit = DepositRequest.query.filter_by(id=deposit_id).with_for_update().first_or_404()
     if deposit.status != 'pending':
@@ -1440,6 +1475,7 @@ def update_deposit_status(deposit_id, action):
 @app.route('/admin/users')
 @login_required
 @admin_required
+@admin_secret_key_required
 def admin_users():
     users = db.session.query(User.id, User.name, User.username, User.email, User.balance, User.is_admin).all()
     return render_template('admin_users.html', users=users)
@@ -1447,6 +1483,7 @@ def admin_users():
 @app.route('/admin/users/edit/<int:user_id>', methods=['GET', 'POST'])
 @login_required
 @admin_required
+@admin_secret_key_required
 def edit_user(user_id):
     user = User.query.get_or_404(user_id)
     if request.method == 'POST':
@@ -1473,6 +1510,7 @@ def edit_user(user_id):
 @app.route('/admin/users/delete/<int:user_id>', methods=['POST'])
 @login_required
 @admin_required
+@admin_secret_key_required
 def delete_user(user_id):
     user = User.query.get_or_404(user_id)
     if user.id == current_user.id:
@@ -1486,6 +1524,7 @@ def delete_user(user_id):
 @app.route('/admin/exchange', methods=['POST'])
 @login_required
 @admin_required
+@admin_secret_key_required
 def update_exchange_manual():
     target = request.form.get('target_currency')
     new_rate = request.form.get('rate')
@@ -1696,6 +1735,7 @@ def subscribe_push():
 @app.route('/admin/noti', methods=['GET', 'POST'])
 @login_required
 @admin_required
+@admin_secret_key_required
 def admin_noti():
     if request.method == 'POST':
         title = request.form.get('title', 'Hadi88 Premium Alert')

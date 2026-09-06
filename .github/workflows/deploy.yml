@@ -23,6 +23,7 @@ jobs:
 
     env:
       HADI_PATH: ${{ secrets.HADI_PATH }}
+      ADMIN_ACCESS_KEY: ${{ secrets.ADMIN_ACCESS_KEY }}
       ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
       MYSQL_USER: ${{ secrets.DB_USER }}
       MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
