@@ -755,7 +755,6 @@ def send_ntfy_deposit_alert(user_name, user_email, amount, sender_acc, sender_na
         url = f"https://ntfy.sh/{topic}"
         title = f"💳 New Deposit: PKR {amount:,.2f}"
         
-        # Clean & structured Markdown formatting
         message = (
             f"👤 **User:** {user_name}\n"
             f"📧 **Email:** {user_email}\n"
@@ -766,20 +765,17 @@ def send_ntfy_deposit_alert(user_name, user_email, amount, sender_acc, sender_na
             f"📑 **Txn ID:** `{txn_id}`"
         )
         
-        # Direct Action Button to review deposits in admin panel
-        admin_url = os.environ.get("HADI_PATH", "/admin/deposits")
-        
         headers = {
             "Title": title,
-            "Priority": "high",  # Instant alert tone
+            "Priority": "high",
             "Tags": "moneybag,bank,dollar",
-            "Markdown": "true",  # Enables bold text, code blocks & lines
-            "Actions": f"view, Open Admin Panel, https://hadi88.online{admin_url}"
+            "Markdown": "true"
         }
         
         requests.post(url, data=message.encode('utf-8'), headers=headers, timeout=5)
     except Exception as e:
         app.logger.error(f"Failed to send ntfy notification: {e}")
+
 
 
 
