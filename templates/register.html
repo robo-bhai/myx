@@ -223,6 +223,60 @@
     opacity: 0.9;
   }
 
+  /* --- Google Auth Button & Separator --- */
+  .auth-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 1.5rem 0 1.25rem 0;
+    color: var(--register-text);
+    opacity: 0.7;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .auth-divider::before,
+  .auth-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--register-border);
+  }
+
+  .auth-divider span {
+    padding: 0 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-google {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 0.85rem;
+    border-radius: 10px;
+    background: var(--register-input-bg);
+    border: 1px solid var(--register-border);
+    color: var(--register-text) !important;
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+  }
+
+  .btn-google:hover {
+    background: var(--register-border);
+    border-color: var(--register-primary);
+    transform: translateY(-2px);
+    color: var(--register-text) !important;
+  }
+
+  .google-icon {
+    width: 20px;
+    height: 20px;
+  }
+
   /* --- Legal & Footer --- */
   .legal-check-container {
     font-size: 0.8rem;
@@ -255,7 +309,7 @@
 
   .legal-link:hover {
     text-decoration: underline;
-    color: var(--text-main) !important;
+    color: var(--register-text) !important;
   }
 
   .register-promo {
@@ -382,6 +436,20 @@
             </button>
         </form>
 
+        <div class="auth-divider">
+            <span>OR</span>
+        </div>
+
+        <a href="{{ url_for('google_login') }}" id="btn-google-signup" class="btn-google">
+            <svg class="google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.2 9 5 12 5z"/>
+                <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
+                <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15s.7 5.3 1.9 7.7l3.7-2.9c-.2-.7-.4-1.5-.4-2.3z"/>
+                <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.2-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z"/>
+            </svg>
+            Sign up with Google
+        </a>
+
         <div class="register-promo">
             <p class="promo-text">Already have an account?</p>
             <a href="{{ url_for('login') }}" class="btn-register-outline">
@@ -464,6 +532,15 @@ $(document).ready(function() {
       e.preventDefault();
       if (emailExists) showToast('Email already exists.');
       else if (usernameExists) showToast('Username already exists.');
+    }
+  });
+
+  /* Enforce Terms Checkbox for Google Sign Up */
+  $('#btn-google-signup').on('click', function(e) {
+    if (!$('#terms_agree').is(':checked')) {
+      e.preventDefault();
+      showToast('Please agree to the Privacy Policy and Terms & Conditions first.');
+      $('#terms_agree').focus();
     }
   });
 });
