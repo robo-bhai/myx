@@ -27,12 +27,12 @@
   }
 
   /* Strict Font Color Enforcement for Light/Dark Mode Branding */
-  .main-heading, .sub-heading, .form-label, .form-control, .promo-text, .small-text, .trust-item {
+  .main-heading, .sub-heading, .form-label, .form-control, .promo-text, .small-text, .trust-item, .legal-check-container {
       color: var(--text-main) !important;
   }
 
   /* Primary Branding Font Colors (Yellow/Orange) */
-  .trust-icon, .btn-register-outline, .captcha-refresh-btn, .hero-badge-text {
+  .trust-icon, .btn-register-outline, .captcha-refresh-btn, .hero-badge-text, .legal-link {
       color: var(--primary-gold) !important;
   }
 
@@ -254,18 +254,61 @@
     font-size: 0.95rem;
     text-decoration: none;
     transition: all 0.3s ease;
+    cursor: pointer;
   }
 
-  .btn-google:hover {
+  .btn-google:hover:not(.disabled) {
     background: var(--login-border);
     border-color: var(--login-primary);
     transform: translateY(-2px);
     color: var(--text-main) !important;
   }
 
+  /* Disabled state for Google Button */
+  .btn-google.disabled {
+    opacity: 0.5;
+    cursor: not-allowed !important;
+    filter: grayscale(30%);
+  }
+
   .google-icon {
     width: 20px;
     height: 20px;
+  }
+
+  /* --- Google Terms Section (Hidden initially) --- */
+  .legal-check-container {
+    display: none;
+    font-size: 0.8rem;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 1rem;
+    background: rgba(255,255,255,0.03);
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--login-border);
+  }
+
+  [data-theme="light"] .legal-check-container {
+      background: rgba(0,0,0,0.03);
+  }
+
+  .legal-check-container input[type="checkbox"] {
+    accent-color: var(--login-primary);
+    margin-top: 3px;
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+  }
+
+  .legal-link {
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .legal-link:hover {
+    text-decoration: underline;
+    color: var(--text-main) !important;
   }
 
   /* --- Footer / Conversion --- */
@@ -313,6 +356,35 @@
     display: flex;
     align-items: center;
     gap: 5px;
+  }
+
+  /* --- Toast Notifications --- */
+  .toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1050;
+  }
+
+  .toast {
+    background-color: #dc3545;
+    color: white;
+    border-radius: 10px;
+    padding: 12px 24px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    display: none;
+    border: 1px solid rgba(255,255,255,0.1);
+    font-weight: 500;
+  }
+
+  .toast.show {
+    display: block;
+    animation: slideIn 0.3s ease-out;
+  }
+
+  @keyframes slideIn {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
   }
 
   @media (max-width: 576px) {
@@ -374,7 +446,19 @@
             <span>OR</span>
         </div>
 
-        <a href="{{ url_for('google_login') }}" class="btn-google">
+        <!-- Google Terms Checkbox (Only reveals when Google login is triggered) -->
+        <div class="legal-check-container" id="google-terms-container">
+            <input type="checkbox" id="google_terms_agree">
+            <label for="google_terms_agree">
+                I accept the 
+                <a href="/privacy-policy" class="legal-link" target="_blank">Privacy Policy</a> 
+                and 
+                <a href="/terms-and-conditions" class="legal-link" target="_blank">Terms & Conditions</a> 
+                to continue with Google login.
+            </label>
+        </div>
+
+        <a href="javascript:void(0);" data-auth-url="{{ url_for('google_login') }}" id="btn-google-login" class="btn-google">
             <svg class="google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.2 9 5 12 5z"/>
                 <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
@@ -402,6 +486,12 @@
     </div>
 </div>
 
+<div class="toast-container">
+  <div id="toast" class="toast">
+    <span id="toast-message">Please accept terms to continue</span>
+  </div>
+</div>
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 function refreshCaptcha() {
@@ -417,5 +507,59 @@ function refreshCaptcha() {
         $('input[name="captcha_input"]').val('');
     });
 }
+
+$(document).ready(function() {
+    function showToast(message) {
+        $('#toast-message').text(message);
+        $('#toast').addClass('show');
+        setTimeout(function() {
+            $('#toast').removeClass('show');
+        }, 3000);
+    }
+
+    function updateGoogleBtnState() {
+        if ($('#google_terms_agree').is(':checked')) {
+            $('#btn-google-login').removeClass('disabled');
+        } else {
+            $('#btn-google-login').addClass('disabled');
+        }
+    }
+
+    // Dynamic state update when checkbox state changes
+    $('#google_terms_agree').on('change', function() {
+        updateGoogleBtnState();
+    });
+
+    // Handle Google Login Button clicks
+    $('#btn-google-login').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const termsContainer = $('#google-terms-container');
+
+        // Step 1: If terms container is not visible yet, show it on first click
+        if (!termsContainer.is(':visible')) {
+            termsContainer.slideDown(300, function() {
+                updateGoogleBtnState();
+                $('#google_terms_agree').focus();
+            });
+            showToast('Please check and accept Terms & Conditions to proceed with Google Login.');
+            return false;
+        }
+
+        // Step 2: Check if checkbox is checked
+        if (!$('#google_terms_agree').is(':checked')) {
+            showToast('Please accept the Privacy Policy and Terms & Conditions first.');
+            $('#google_terms_agree').focus();
+            return false;
+        }
+
+        // Step 3: Redirect to Google OAuth once agreed
+        const targetUrl = $(this).attr('data-auth-url');
+        if (targetUrl) {
+            window.location.href = targetUrl;
+        }
+    });
+});
 </script>
 {% endblock %}
