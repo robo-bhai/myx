@@ -742,15 +742,19 @@ def dashboard():
 
 import os
 import requests
+import logging
+from email.header import Header
 
 def send_ntfy_deposit_alert(user_name, user_email, amount, sender_acc, sender_name, txn_id):
     """Bhejdega formatted aur attractive ntfy push notification jab deposit request save hogi."""
-    # Agar env var na mile toh direct topic name use karega
     topic = os.environ.get("wallet_topic") or os.environ.get("WALLET_TOPIC") or "aakshdh_uuta_6777"
 
     try:
         url = f"https://ntfy.sh/{topic}"
-        title = f"💳 New Deposit: PKR {amount:,.2f}"
+        
+        # 1. Title with Non-ASCII / Emoji Encoding Fix
+        raw_title = f"💳 New Deposit: PKR {amount:,.2f}"
+        encoded_title = Header(raw_title, 'utf-8').encode()
 
         message = (
             f"👤 **User:** {user_name}\n"
@@ -762,17 +766,24 @@ def send_ntfy_deposit_alert(user_name, user_email, amount, sender_acc, sender_na
             f"📑 **Txn ID:** `{txn_id}`"
         )
 
+        # 2. Safe Headers (No direct Emojis in raw header values)
         headers = {
-            "Title": title,
+            "Title": encoded_title,
             "Priority": "high",
-            "Tags": "moneybag,bank,dollar",
+            "Tags": "moneybag,bank,dollar",  # ntfy natively renders emoji tags via names
             "Markdown": "true"
         }
 
-        response = requests.post(url, data=message.encode('utf-8'), headers=headers, timeout=5)
-        app.logger.info(f"Ntfy response status: {response.status_code}")
+        # 3. Explicit UTF-8 Body Encoding
+        response = requests.post(url, data=message.encode('utf-8'), headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            app.logger.info(f"Ntfy notification delivered successfully to topic: {topic}")
+        else:
+            app.logger.error(f"Ntfy delivery failed. Status: {response.status_code}, Response: {response.text}")
+
     except Exception as e:
-        app.logger.error(f"Failed to send ntfy notification: {e}")
+        app.logger.error(f"Failed to send ntfy notification: {e}", exc_info=True)
 
 
 
