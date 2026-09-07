@@ -747,7 +747,7 @@ from email.header import Header
 
 def send_ntfy_deposit_alert(user_name, user_email, amount, sender_acc, sender_name, txn_id):
     """Bhejdega formatted aur attractive ntfy push notification jab deposit request save hogi."""
-    topic = os.environ.get("wallet_topic") or os.environ.get("WALLET_TOPIC") or "aakshdh_uuta_6777"
+    topic = os.environ.get("wallet_topic") or os.environ.get("WALLET_TOPIC")
 
     try:
         url = f"https://ntfy.sh/{topic}"
