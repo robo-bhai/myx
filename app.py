@@ -745,16 +745,13 @@ import requests
 
 def send_ntfy_deposit_alert(user_name, user_email, amount, sender_acc, sender_name, txn_id):
     """Bhejdega formatted aur attractive ntfy push notification jab deposit request save hogi."""
-    topic = os.environ.get("wallet_topic")
-    
-    if not topic:
-        app.logger.warning("Environment variable 'wallet_topic' is not set. Skipping notification.")
-        return
+    # Agar env var na mile toh direct topic name use karega
+    topic = os.environ.get("wallet_topic") or os.environ.get("WALLET_TOPIC") or "aakshdh_uuta_6777"
 
     try:
         url = f"https://ntfy.sh/{topic}"
         title = f"💳 New Deposit: PKR {amount:,.2f}"
-        
+
         message = (
             f"👤 **User:** {user_name}\n"
             f"📧 **Email:** {user_email}\n"
@@ -764,18 +761,18 @@ def send_ntfy_deposit_alert(user_name, user_email, amount, sender_acc, sender_na
             f"🔢 **Account:** `{sender_acc}`\n"
             f"📑 **Txn ID:** `{txn_id}`"
         )
-        
+
         headers = {
             "Title": title,
             "Priority": "high",
             "Tags": "moneybag,bank,dollar",
             "Markdown": "true"
         }
-        
-        requests.post(url, data=message.encode('utf-8'), headers=headers, timeout=5)
+
+        response = requests.post(url, data=message.encode('utf-8'), headers=headers, timeout=5)
+        app.logger.info(f"Ntfy response status: {response.status_code}")
     except Exception as e:
         app.logger.error(f"Failed to send ntfy notification: {e}")
-
 
 
 
