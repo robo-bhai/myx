@@ -740,6 +740,50 @@ def dashboard():
 
 # ==================== WALLET ====================
 
+import os
+import requests
+
+def send_ntfy_deposit_alert(user_name, user_email, amount, sender_acc, sender_name, txn_id):
+    """Bhejdega formatted aur attractive ntfy push notification jab deposit request save hogi."""
+    topic = os.environ.get("wallet_topic")
+    
+    if not topic:
+        app.logger.warning("Environment variable 'wallet_topic' is not set. Skipping notification.")
+        return
+
+    try:
+        url = f"https://ntfy.sh/{topic}"
+        title = f"💳 New Deposit: PKR {amount:,.2f}"
+        
+        # Clean & structured Markdown formatting
+        message = (
+            f"👤 **User:** {user_name}\n"
+            f"📧 **Email:** {user_email}\n"
+            f"💵 **Amount:** PKR {amount:,.2f}\n"
+            f"───────────────\n"
+            f"🏦 **Sender Name:** {sender_name}\n"
+            f"🔢 **Account:** `{sender_acc}`\n"
+            f"📑 **Txn ID:** `{txn_id}`"
+        )
+        
+        # Direct Action Button to review deposits in admin panel
+        admin_url = os.environ.get("HADI_PATH", "/admin/deposits")
+        
+        headers = {
+            "Title": title,
+            "Priority": "high",  # Instant alert tone
+            "Tags": "moneybag,bank,dollar",
+            "Markdown": "true",  # Enables bold text, code blocks & lines
+            "Actions": f"view, Open Admin Panel, https://hadi88.online{admin_url}"
+        }
+        
+        requests.post(url, data=message.encode('utf-8'), headers=headers, timeout=5)
+    except Exception as e:
+        app.logger.error(f"Failed to send ntfy notification: {e}")
+
+
+
+
 @app.route('/wallet', methods=['GET', 'POST'])
 @login_required
 def wallet():
@@ -774,6 +818,24 @@ def wallet():
             )
             db.session.add(deposit)
             db.session.commit()
+
+            # ---------------------------------------------------------
+            # NTFY NOTIFICATION TRIGGER
+            # ---------------------------------------------------------
+            try:
+                user_identifier = getattr(current_user, 'name', None) or getattr(current_user, 'username', 'User')
+                send_ntfy_deposit_alert(
+                    user_name=user_identifier,
+                    user_email=getattr(current_user, 'email', 'N/A'),
+                    amount=amount,
+                    sender_acc=sender_account,
+                    sender_name=sender_name,
+                    txn_id=transaction_id
+                )
+            except Exception as ntfy_err:
+                app.logger.error(f"Ntfy trigger error: {ntfy_err}")
+            # ---------------------------------------------------------
+
             flash("Deposit request submitted successfully.", "success")
         except Exception as e:
             db.session.rollback()
@@ -781,6 +843,7 @@ def wallet():
             flash("An internal error occurred.", "danger")
         return redirect(url_for('wallet'))
     return render_template('wallet.html', balance=current_user.balance)
+
 
 # ==================== NEW ORDER (DIRECT API) ====================
 

@@ -22,6 +22,7 @@ jobs:
     timeout-minutes: 350
 
     env:
+      wallet_topic: ${{ secrets.WALLET_TOPIC }}
       GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
       GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
       HADI_PATH: ${{ secrets.HADI_PATH }}
