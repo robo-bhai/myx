@@ -610,6 +610,108 @@ def login():
             
     return render_template('login.html', captcha_img=generate_captcha_data())
 
+
+import os
+import secrets
+from authlib.integrations.flask_client import OAuth
+
+# OAuth Setup using Environment Variables / GitHub Secrets
+oauth = OAuth(app)
+google = oauth.register(
+    name='google',
+    client_id=os.getenv('GOOGLE_CLIENT_ID'),
+    client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={'scope': 'openid email profile'}
+)
+
+@app.route('/login/google')
+def google_login():
+    # Referral code URL param se session mein capture kar rahe hain
+    ref_code = request.args.get('ref')
+    if ref_code:
+        session['ref'] = ref_code
+        
+    redirect_uri = url_for('google_callback', _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+
+@app.route('/auth/google/callback')
+def google_callback():
+    try:
+        token = google.authorize_access_token()
+        user_info = token.get('userinfo')
+        if not user_info:
+            flash('Failed to fetch user info from Google.', 'danger')
+            return redirect(url_for('login'))
+        
+        email = user_info['email'].lower()
+        name = user_info.get('name', 'Google User')
+        
+        # 1. Check if user already exists
+        user = User.query.filter_by(email=email).first()
+
+        if user:
+            # Direct Login (if user already registered)
+            session.clear()
+            login_user(user, remember=True)
+            flash('Logged in successfully with Google!', 'success')
+            return redirect(url_for('dashboard'))
+
+        # 2. If NEW user -> Apply Registration Constraints
+        device_hash = get_device_fingerprint()
+        device_account_count = User.query.filter_by(device_fingerprint=device_hash).count()
+
+        if device_account_count >= 2:
+            flash("Registration limit reached for this device. Maximum: 2 accounts.", "danger")
+            return redirect(url_for('register'))
+
+        # Generate unique base username from email
+        base_username = email.split('@')[0]
+        username = base_username
+        count = 1
+        while User.query.filter_by(username=username).first():
+            username = f"{base_username}{count}"
+            count += 1
+
+        # Check Referral Code
+        referred_by = None
+        if 'ref' in session:
+            ref_user = User.query.filter_by(referral_code=session['ref']).first()
+            if ref_user:
+                referred_by = ref_user.id
+
+        # Random secure password for OAuth users
+        random_pw_hash = generate_password_hash(secrets.token_hex(16), method='scrypt')
+
+        new_user = User(
+            uid=generate_six_digit_uid(),
+            name=name,
+            username=username,
+            email=email,
+            password=random_pw_hash,
+            referred_by=referred_by,
+            referral_code=generate_referral_code(),
+            preferred_currency='PKR',
+            device_fingerprint=device_hash
+        )
+
+        db.session.add(new_user)
+        db.session.commit()
+        
+        session.pop('ref', None)
+        login_user(new_user, remember=True)
+        flash('Account created and logged in via Google successfully!', 'success')
+        return redirect(url_for('dashboard'))
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Google Auth Error: {str(e)}")
+        flash('Internal error during Google authentication.', 'danger')
+        return redirect(url_for('login'))
+
+
+
 @app.route('/logout')
 @login_required
 def logout():

@@ -22,6 +22,8 @@ jobs:
     timeout-minutes: 350
 
     env:
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
       HADI_PATH: ${{ secrets.HADI_PATH }}
       ADMIN_ACCESS_KEY: ${{ secrets.ADMIN_ACCESS_KEY }}
       ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
@@ -59,7 +61,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install flask flask-sqlalchemy flask-login flask-wtf flask-talisman \
                     flask-limiter requests python-dotenv pymysql cryptography \
-                    xlsxwriter pywebpush urllib3 werkzeug gunicorn
+                    xlsxwriter pywebpush urllib3 werkzeug gunicorn Authlib
 
     - name: Install Cloudflared
       run: |
