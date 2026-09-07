@@ -746,13 +746,17 @@ import logging
 from email.header import Header
 
 def send_ntfy_deposit_alert(user_name, user_email, amount, sender_acc, sender_name, txn_id):
-    """Bhejdega formatted aur attractive ntfy push notification jab deposit request save hogi."""
+    """Bhejdega formatted push notification direct redirect button ke saath."""
     topic = os.environ.get("wallet_topic") or os.environ.get("WALLET_TOPIC")
+    
+    # Dynamic domain / hardcoded target domain
+    base_domain = os.environ.get("BASE_URL")
+    action_url = f"{base_domain}/admin/deposits"
 
     try:
         url = f"https://ntfy.sh/{topic}"
         
-        # 1. Title with Non-ASCII / Emoji Encoding Fix
+        # 1. Title Encoding Fix
         raw_title = f"💳 New Deposit: PKR {amount:,.2f}"
         encoded_title = Header(raw_title, 'utf-8').encode()
 
@@ -766,15 +770,19 @@ def send_ntfy_deposit_alert(user_name, user_email, amount, sender_acc, sender_na
             f"📑 **Txn ID:** `{txn_id}`"
         )
 
-        # 2. Safe Headers (No direct Emojis in raw header values)
+        # 2. Action Button Definition (Action Type, Button Name, URL)
+        action_button = f"view, Review Request, {action_url}"
+
+        # 3. Headers
         headers = {
             "Title": encoded_title,
             "Priority": "high",
-            "Tags": "moneybag,bank,dollar",  # ntfy natively renders emoji tags via names
-            "Markdown": "true"
+            "Tags": "moneybag,bank,dollar",
+            "Markdown": "true",
+            "Actions": action_button
         }
 
-        # 3. Explicit UTF-8 Body Encoding
+        # 4. UTF-8 Request
         response = requests.post(url, data=message.encode('utf-8'), headers=headers, timeout=10)
         
         if response.status_code == 200:
@@ -784,7 +792,6 @@ def send_ntfy_deposit_alert(user_name, user_email, amount, sender_acc, sender_na
 
     except Exception as e:
         app.logger.error(f"Failed to send ntfy notification: {e}", exc_info=True)
-
 
 
 
