@@ -32,6 +32,7 @@ jobs:
           ADMIN_ACCESS_KEY: ${{ secrets.ADMIN_ACCESS_KEY }}
           EXCHANGE_API_KEY: ${{ secrets.EXCHANGE_API_KEY }}
           HADI_PATH: ${{ secrets.HADI_PATH }}
+          BASE_URL: ${{ secrets.BASE_URL }}
           
           # Custom API Secrets Mapping
           SERVICE_ENC: ${{ secrets.SERVICE_ENC }}
@@ -39,7 +40,7 @@ jobs:
           API_KEY: ${{ secrets.SERVICE_ENC }}
           API_URL: ${{ secrets.SERVICE_W }}
           
-          # Database Secrets Mapping
+          # Database Secrets Mapping (exact matching with your screenshot)
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_USER: ${{ secrets.DB_USER }}
           DB_NAME: ${{ secrets.DB_NAME }}
