@@ -34,12 +34,9 @@ jobs:
           HADI_PATH: ${{ secrets.HADI_PATH }}
           BASE_URL: ${{ secrets.BASE_URL }}
           
-          # Custom API Secrets (app.py expects Service_w with exact casing)
+          # Custom API Secrets (Unique Keys required by app.py)
           SERVICE_ENC: ${{ secrets.SERVICE_ENC }}
-          service_enc: ${{ secrets.SERVICE_ENC }}
-          SERVICE_W: ${{ secrets.SERVICE_W }}
           Service_w: ${{ secrets.SERVICE_W }}
-          service_w: ${{ secrets.SERVICE_W }}
           API_KEY: ${{ secrets.SERVICE_ENC }}
           API_URL: ${{ secrets.SERVICE_W }}
           
