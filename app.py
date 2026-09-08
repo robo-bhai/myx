@@ -858,6 +858,12 @@ def wallet():
 
 # ==================== NEW ORDER (DIRECT API) ====================
 
+import uuid
+import time
+import re
+from flask import render_template, request, redirect, url_for, flash, session, jsonify
+from flask_login import login_required, current_user
+
 @app.route('/das', methods=['GET', 'POST'])
 @login_required
 def new_order():
@@ -955,18 +961,46 @@ def new_order():
             sub_multiplier = get_subscription_multiplier(current_user, markup)
             price_pkr = round((base_cost_pkr * markup) * sub_multiplier, 2)
             
-            user = User.query.filter_by(id=current_user.id).with_for_update().first()
-            
-            if user.balance < price_pkr:
-                db.session.rollback()
-                flash(f"Insufficient balance. Need {price_pkr} PKR", "danger")
-                return redirect(url_for('wallet'))
-                
-            user.balance -= price_pkr
-            db.session.add(Transaction(user_id=user.id, amount=-price_pkr, type='order_hold'))
-            
             # ============================================================
-            #                    DIRECT API CALL - NO HUEY
+            # PHASE 1: Atomic Short Transaction - Deduct Balance & Create Draft
+            # ============================================================
+            try:
+                updated_rows = User.query.filter(
+                    User.id == current_user.id,
+                    User.balance >= price_pkr
+                ).update(
+                    {User.balance: User.balance - price_pkr},
+                    synchronize_session=False
+                )
+
+                if updated_rows == 0:
+                    db.session.rollback()
+                    flash(f"Insufficient balance. Need {price_pkr} PKR", "danger")
+                    return redirect(url_for('wallet'))
+
+                # Draft order record created before external call
+                new_order_rec = Order(
+                    user_id=current_user.id,
+                    service_id=final_service_id,
+                    link=link,
+                    quantity=total_quantity,
+                    cost=price_pkr,
+                    status='Processing',
+                    api_order_id=None,
+                    api_response='Pending API Execution'
+                )
+                db.session.add(new_order_rec)
+                db.session.add(Transaction(user_id=current_user.id, amount=-price_pkr, type='order_hold'))
+                db.session.commit()  # Lock released immediately!
+                
+            except Exception as db_err:
+                db.session.rollback()
+                app.logger.error(f"Phase 1 Transaction Error: {str(db_err)}")
+                flash("Database transaction failed. Please try again.", "danger")
+                return redirect(url_for('new_order'))
+
+            # ============================================================
+            # PHASE 2: External Direct API Call (Outside DB Lock Window)
             # ============================================================
             success, api_result, error = submit_order_direct(
                 final_service_id, 
@@ -977,32 +1011,36 @@ def new_order():
                 interval
             )
             
+            # ============================================================
+            # PHASE 3: Update Order Status or Atomic Refund on Failure
+            # ============================================================
             if success and api_result and 'order' in api_result:
-                # Get initial status
                 status_success, status_val, status_error = get_order_status_direct(api_result['order'])
                 
-                new_order_rec = Order(
-                    user_id=current_user.id,
-                    service_id=final_service_id,
-                    link=link,
-                    quantity=total_quantity,
-                    cost=price_pkr,
-                    status=status_val if status_success else 'Processing',
-                    api_order_id=str(api_result['order']),
-                    api_response=str(api_result)
-                )
-                db.session.add(new_order_rec)
+                new_order_rec.api_order_id = str(api_result['order'])
+                new_order_rec.api_response = str(api_result)
+                new_order_rec.status = status_val if status_success else 'Processing'
                 db.session.commit()
                 
                 flash(f"✅ Order #{api_result['order']} placed successfully!", "success")
+                return redirect(url_for('status'))
             else:
-                # Refund user
-                user.balance += price_pkr
-                db.session.rollback()
-                flash(f"❌ Order failed: {error}", "danger")
+                # Refund user balance atomically if API call fails/times out
+                try:
+                    User.query.filter_by(id=current_user.id).update(
+                        {User.balance: User.balance + price_pkr},
+                        synchronize_session=False
+                    )
+                    new_order_rec.status = 'Failed'
+                    new_order_rec.api_response = str(error)
+                    db.session.add(Transaction(user_id=current_user.id, amount=price_pkr, type='order_refund'))
+                    db.session.commit()
+                except Exception as refund_err:
+                    db.session.rollback()
+                    app.logger.critical(f"REFUND_FAILED for Order ID {new_order_rec.id}: {str(refund_err)}")
+                
+                flash(f"❌ Order failed: {error}. Balance refunded.", "danger")
                 return redirect(url_for('new_order'))
-
-            return redirect(url_for('status'))
 
         except Exception as e:
             db.session.rollback()
@@ -1079,6 +1117,7 @@ def new_order():
     except Exception as e:
         app.logger.error(f"Service Fetch Error: {e}")
         return render_template("errors/api_down.html"), 503
+
 
 # ==================== ORDER STATUS (DIRECT API) ====================
 
