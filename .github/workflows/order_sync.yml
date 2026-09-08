@@ -26,14 +26,27 @@ jobs:
 
       - name: Execute Order Sync Script
         env:
-          # Pass required secrets to Python environment
+          # Application Secrets
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          FLASK_SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY }}
           ADMIN_ACCESS_KEY: ${{ secrets.ADMIN_ACCESS_KEY }}
           EXCHANGE_API_KEY: ${{ secrets.EXCHANGE_API_KEY }}
           HADI_PATH: ${{ secrets.HADI_PATH }}
-          MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
-          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          
+          # Custom API Secrets Mapping
+          SERVICE_ENC: ${{ secrets.SERVICE_ENC }}
+          SERVICE_W: ${{ secrets.SERVICE_W }}
+          API_KEY: ${{ secrets.SERVICE_ENC }}
+          API_URL: ${{ secrets.SERVICE_W }}
+          
+          # Database Secrets Mapping
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          MYSQL_HOST: ${{ secrets.DB_HOST }}
+          MYSQL_USER: ${{ secrets.DB_USER }}
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
-          MYSQL_DB: ${{ secrets.MYSQL_DB }}
-          MYSQL_PORT: ${{ secrets.MYSQL_PORT }}
+          MYSQL_DB: ${{ secrets.DB_NAME }}
+          MYSQL_PORT: ${{ secrets.DB_PORT }}
         run: python sync_orders.py
