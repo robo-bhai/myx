@@ -1124,21 +1124,16 @@ def new_order():
 @app.route('/status', methods=['GET', 'POST'])
 @login_required
 def status():
-    status_data = None
+    status_data = []
     search_query = None
-    
+
     if request.method == 'POST':
-        order_id = request.form.get('order_id')
+        order_id = request.form.get('order_id', '').strip()
         search_query = order_id
+        
+        # Fast direct DB lookup
         order = Order.query.filter_by(id=order_id, user_id=current_user.id).first()
         if order:
-            # Fetch latest status from API if api_order_id exists
-            if order.api_order_id:
-                success, status_val, error = get_order_status_direct(order.api_order_id)
-                if success and status_val:
-                    order.status = status_val
-                    db.session.commit()
-            
             status_data = [{
                 "id": order.id,
                 "service": order.service_id,
@@ -1150,27 +1145,22 @@ def status():
             }]
         else:
             flash("Order not found.", "danger")
-    else:
-        user_orders = Order.query.filter_by(user_id=current_user.id).order_by(Order.timestamp.desc()).all()
-        status_data = []
-        for o in user_orders:
-            # Refresh status for pending orders
-            if o.api_order_id and o.status not in ['Completed', 'Failed', 'Canceled']:
-                success, status_val, error = get_order_status_direct(o.api_order_id)
-                if success and status_val and status_val != o.status:
-                    o.status = status_val
-                    db.session.commit()
             
-            status_data.append({
-                "id": o.id,
-                "service": o.service_id,
-                "link": o.link,
-                "quantity": o.quantity,
-                "status": o.status,
-                "date": o.timestamp.strftime('%Y-%m-%d %H:%M'),
-                "cost": o.cost
-            })
+    else:
+        # Fast DB fetch (No API calls, background cron job updates this)
+        user_orders = Order.query.filter_by(user_id=current_user.id).order_by(Order.timestamp.desc()).all()
+        status_data = [{
+            "id": o.id,
+            "service": o.service_id,
+            "link": o.link,
+            "quantity": o.quantity,
+            "status": o.status,
+            "date": o.timestamp.strftime('%Y-%m-%d %H:%M'),
+            "cost": o.cost
+        } for o in user_orders]
+
     return render_template('status.html', orders=status_data, search_query=search_query)
+
 
 # ==================== FREE TRIAL (DIRECT API) ====================
 
