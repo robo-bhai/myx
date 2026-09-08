@@ -17,18 +17,13 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install All Required Hardcoded Dependencies
+      - name: Install All Hardcoded Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install Flask Flask-SQLAlchemy Flask-Login Flask-Talisman Flask-WTF requests PyMySQL cryptography python-dotenv werkzeug xlsxwriter pywebpush
-      
+          pip install Flask Flask-SQLAlchemy Flask-Login Flask-WTF Flask-Talisman \
+                      Flask-Limiter requests python-dotenv PyMySQL cryptography \
+                      xlsxwriter pywebpush urllib3 werkzeug gunicorn Authlib
 
-    - name: Install Hardcoded Dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install flask flask-sqlalchemy flask-login flask-wtf flask-talisman \
-                    flask-limiter requests python-dotenv pymysql cryptography \
-                    xlsxwriter pywebpush urllib3 werkzeug gunicorn Authlib
       - name: Execute Order Sync Script
         env:
           # Pass required secrets to Python environment
