@@ -2116,26 +2116,44 @@ def handle_exception(e):
 
 # ==================== CACHE SERVICE ROUTE ====================
 
-@app.route('/cache-servevis.json')
-def serve_cache_services():
-    try:
-        # File ka absolute path
-        file_path = os.path.join(basedir, 'services_cache.json')
-        
-        # Agar file exist nahi karti to automatic sync call hoga
-        if not os.path.exists(file_path):
-            fetch_and_cache_services()
-            
-        # File response serve karein
-        return send_file(
-            file_path,
-            mimetype='application/json',
-            as_attachment=False
-        )
-    except Exception as e:
-        app.logger.error(f"Error serving cache file: {str(e)}")
-        return jsonify({"error": "Cache file loading failed"}), 500
+# ==================== MANUAL / CRON FORCE SYNC ROUTE ====================
 
+@app.route('/admin/sync-services')
+@admin_secret_key_required
+def force_sync_services():
+    """
+    Protected Endpoint: Provider API se fresh services sync karke 
+    cache JSON file aur RAM memory updates karta hai.
+    
+    Access Methods:
+    1. Direct URL: /admin/sync-services?key=YOUR_ADMIN_ACCESS_KEY
+    2. Logged-in Admin Session
+    """
+    try:
+        app.logger.info("Admin initiated manual service cache sync...")
+        
+        # Provider API call karke file aur RAM dono update karta hai
+        success = fetch_and_cache_services()
+        
+        if success:
+            return jsonify({
+                "status": "success",
+                "message": "Services force-synced successfully!",
+                "timestamp": SERVICES_CACHE.get('timestamp'),
+                "total_services": len(SERVICES_CACHE.get('data', [])) if SERVICES_CACHE.get('data') else 0
+            }), 200
+        else:
+            return jsonify({
+                "status": "error",
+                "message": "Failed to sync services from provider API. Check logs."
+            }), 500
+
+    except Exception as e:
+        app.logger.error(f"Error executing force_sync_services: {str(e)}")
+        return jsonify({
+            "status": "error",
+            "message": f"Server Error: {str(e)}"
+        }), 500
 
 
 # ==================== DATABASE INITIALIZATION ====================
