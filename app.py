@@ -2112,6 +2112,32 @@ def handle_exception(e):
     db.session.rollback()
     return render_template('500.html'), 500
 
+
+
+# ==================== CACHE SERVICE ROUTE ====================
+
+@app.route('/cache-servevis.json')
+def serve_cache_services():
+    try:
+        # File ka absolute path
+        file_path = os.path.join(basedir, 'services_cache.json')
+        
+        # Agar file exist nahi karti to automatic sync call hoga
+        if not os.path.exists(file_path):
+            fetch_and_cache_services()
+            
+        # File response serve karein
+        return send_file(
+            file_path,
+            mimetype='application/json',
+            as_attachment=False
+        )
+    except Exception as e:
+        app.logger.error(f"Error serving cache file: {str(e)}")
+        return jsonify({"error": "Cache file loading failed"}), 500
+
+
+
 # ==================== DATABASE INITIALIZATION ====================
 
 import os
