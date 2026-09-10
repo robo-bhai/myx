@@ -73,23 +73,41 @@ jobs:
       with:
         python-version: "3.10"
 
-    - name: Install Hardcoded Dependencies & MySQL Client
+    - name: Install System Dependencies & MySQL Client
       run: |
         sudo apt-get update
         sudo apt-get install -y mysql-client
+
+    - name: Install Python Dependencies
+      run: |
         python -m pip install --upgrade pip
         pip install flask flask-sqlalchemy flask-login flask-wtf flask-talisman \
                     flask-limiter requests python-dotenv pymysql cryptography \
                     xlsxwriter pywebpush urllib3 werkzeug gunicorn Authlib
 
-    - name: Install Cloudflared
+    - name: Install Cloudflared Tunnel
       run: |
         curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
         sudo dpkg -i cloudflared.deb
 
-    - name: Download Cloud DB Data to Local MySQL Service
+    - name: Restore Local DB Cache
+      id: db-cache
+      uses: actions/cache/restore@v4
+      with:
+        path: db_cache/
+        key: mysql-db-latest-cache
+
+    - name: Load Data from Cache (If Cache Hit)
+      if: steps.db-cache.outputs.cache-hit == 'true'
       run: |
-        echo "📥 Downloading complete database dump from Cloud MySQL..."
+        echo "⚡ Cache found! Restoring database state from cached dump..."
+        mysql -h 127.0.0.1 -P 3306 -u local_user -plocal_password local_app_db < db_cache/db-dump.sql
+        echo "✅ Data successfully loaded from Local Cache!"
+
+    - name: Fetch Fresh Dump from Cloud MySQL (If Cache Miss)
+      if: steps.db-cache.outputs.cache-hit != 'true'
+      run: |
+        echo "📥 Cache miss! Downloading fresh database dump from Cloud MySQL..."
         mysqldump -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" \
           --set-gtid-purged=OFF \
           --no-tablespaces \
@@ -104,9 +122,9 @@ jobs:
 
         echo "📦 Restoring schema and records into Local MySQL Service..."
         mysql -h 127.0.0.1 -P 3306 -u local_user -plocal_password local_app_db < cloud_dump.sql
-        echo "✅ Data successfully loaded into Local Database!"
+        echo "✅ Data successfully fetched & loaded from Cloud DB!"
 
-    - name: Test Local MySQL Connection
+    - name: Verify Local MySQL Database Connection
       env:
         MYSQL_HOST: 127.0.0.1
         MYSQL_PORT: 3306
@@ -128,29 +146,8 @@ jobs:
             print('✅ Connection & Data Integrity Passed!')
         "
 
-    - name: Run Application & Auto-Sync Back to Cloud DB
+    - name: Start Gunicorn App Server
       run: |
-        sync_back_to_cloud() {
-          echo ""
-          echo "⚠️ Execution ending. Starting auto-sync back to Cloud DB..."
-          echo "📤 Dumping updated Local MySQL state..."
-          mysqldump -h 127.0.0.1 -P 3306 -u local_user -plocal_password local_app_db \
-            --set-gtid-purged=OFF \
-            --no-tablespaces \
-            --single-transaction \
-            --quick \
-            --lock-tables=false > raw_local_sync.sql
-          
-          # Clean DEFINER to prevent cloud privilege restrictions on write back
-          sed -E 's/DEFINER=`[^`]+`@`[^`]+`/DEFINER=CURRENT_USER/g' raw_local_sync.sql > local_sync.sql
-
-          echo "☁️ Uploading updated state to Cloud DB ($MYSQL_HOST)..."
-          mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DB" < local_sync.sql
-          echo "✅ Synchronization back to Cloud DB completed successfully!"
-        }
-
-        trap sync_back_to_cloud EXIT SIGINT SIGTERM
-
         echo "Starting Gunicorn server connected to local database..."
         MYSQL_HOST=127.0.0.1 MYSQL_PORT=3306 MYSQL_USER=local_user MYSQL_PASSWORD=local_password MYSQL_DB=local_app_db \
         nohup gunicorn --workers 5 --threads 2 --timeout 120 --bind 127.0.0.1:5000 app:app > gunicorn.log 2>&1 &
@@ -164,6 +161,8 @@ jobs:
         fi
         echo "✅ Gunicorn running healthily on http://127.0.0.1:5000"
 
+    - name: Start Cloudflare Tunnel & Keep Alive
+      run: |
         echo "Starting Cloudflare Tunnel..."
         nohup cloudflared tunnel run --token "$CLOUDFLARE_TUNNEL_TOKEN" > cloudflare.log 2>&1 &
         sleep 5
@@ -174,3 +173,29 @@ jobs:
 
         echo "Holding runner open safely for 17,000 seconds..."
         sleep 17000
+
+    - name: Auto-Sync Local DB Back to Cloud DB (Failsafe)
+      if: always()
+      run: |
+        echo "⚠️ Workflow stopping/canceled. Syncing latest Local DB state back to Cloud..."
+        mkdir -p db_cache
+        
+        mysqldump -h 127.0.0.1 -P 3306 -u local_user -plocal_password local_app_db \
+          --set-gtid-purged=OFF \
+          --no-tablespaces \
+          --single-transaction \
+          --quick \
+          --lock-tables=false > db_cache/raw_local_sync.sql
+        
+        sed -E 's/DEFINER=`[^`]+`@`[^`]+`/DEFINER=CURRENT_USER/g' db_cache/raw_local_sync.sql > db_cache/db-dump.sql
+
+        echo "☁️ Uploading updated state to Cloud DB ($MYSQL_HOST)..."
+        mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DB" < db_cache/db-dump.sql
+        echo "✅ Synchronization back to Cloud DB completed successfully!"
+
+    - name: Save Updated DB Dump to GitHub Cache
+      if: always()
+      uses: actions/cache/save@v4
+      with:
+        path: db_cache/
+        key: mysql-db-latest-cache-${{ github.run_id }}-${{ github.run_attempt }}
