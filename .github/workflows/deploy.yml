@@ -68,11 +68,10 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Set up Python 3.10 with Pip Cache
+    - name: Set up Python 3.10
       uses: actions/setup-python@v5
       with:
         python-version: "3.10"
-        cache: 'pip' # Automated caching for pip packages
 
     - name: Install System Dependencies & MySQL Client
       run: |
@@ -109,11 +108,11 @@ jobs:
         restore-keys: |
           mysql-db-latest-cache-
 
-    - name: Process DB Dump (Cache Check & Load with Corruption Fallback)
+    - name: Process DB Dump (Cache Check, Load & Fresh Cloud Fallback)
       run: |
         LOAD_SUCCESS=false
 
-        # Check if cache folder and dump file exist, and is not corrupt
+        # Step A: Cache Check & Load
         if [ -f "db_cache/db-dump.sql" ] && [ -s "db_cache/db-dump.sql" ]; then
           echo "⚡ Found cached database dump! Testing SQL file integrity..."
           
@@ -129,12 +128,12 @@ jobs:
             echo "❌ Cached SQL file failed integrity check (file corrupt or empty)."
           fi
         else
-          echo "ℹ️ No local cache found."
+          echo "ℹ️ No local cache file found (First run or Cache Expired)."
         fi
 
-        # Fallback to Cloud MySQL if Cache was missing or corrupt
+        # Step B: Fresh Install Fallback (Cloud MySQL Fetch)
         if [ "$LOAD_SUCCESS" = "false" ]; then
-          echo "📥 Fetching fresh database dump from Cloud MySQL..."
+          echo "📥 Performing FRESH INSTALL: Fetching fresh database dump from Cloud MySQL..."
           mysqldump -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" \
             --set-gtid-purged=OFF \
             --no-tablespaces \
@@ -143,13 +142,13 @@ jobs:
             --lock-tables=false \
             "$MYSQL_DB" > raw_cloud_dump.sql
 
-          echo "🧹 Cleaning DEFINER & GTID privilege restricted queries..."
+          echo "🧹 Cleaning DEFINER & GTID queries..."
           sed -E 's/DEFINER=`[^`]+`@`[^`]+`/DEFINER=CURRENT_USER/g' raw_cloud_dump.sql | \
           sed -E 's/@@GLOBAL\.GTID_PURGED=/\-- @@GLOBAL\.GTID_PURGED=/g' > cloud_dump.sql
 
-          echo "📦 Restoring schema and records into Local MySQL Service..."
+          echo "📦 Loading fresh database state into Local MySQL..."
           mysql -h 127.0.0.1 -P 3306 -u local_user -plocal_password local_app_db < cloud_dump.sql
-          echo "✅ Data successfully loaded from Cloud DB!"
+          echo "✅ Fresh DB successfully initialized from Cloud MySQL!"
         fi
 
     - name: Verify Local MySQL Database Connection
