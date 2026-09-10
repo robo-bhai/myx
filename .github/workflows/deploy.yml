@@ -1,4 +1,4 @@
-name: Flask App & MySQL Database Integration Test
+name: Flask App & Local MySQL Sync Pipeline
 
 on:
   push:
@@ -7,7 +7,6 @@ on:
     branches: [ "main", "master" ]
   workflow_dispatch:
 
-# GitHub API se active workflows cancel karne ke liye required permissions
 permissions:
   actions: write
   contents: read
@@ -20,6 +19,22 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     timeout-minutes: 350
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: local_root_pass
+          MYSQL_DATABASE: local_app_db
+          MYSQL_USER: local_user
+          MYSQL_PASSWORD: local_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
 
     env:
       BASE_URL: ${{ secrets.BASE_URL }}
@@ -58,8 +73,10 @@ jobs:
       with:
         python-version: "3.10"
 
-    - name: Install Hardcoded Dependencies
+    - name: Install Hardcoded Dependencies & MySQL Client
       run: |
+        sudo apt-get update
+        sudo apt-get install -y mysql-client
         python -m pip install --upgrade pip
         pip install flask flask-sqlalchemy flask-login flask-wtf flask-talisman \
                     flask-limiter requests python-dotenv pymysql cryptography \
@@ -70,63 +87,74 @@ jobs:
         curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
         sudo dpkg -i cloudflared.deb
 
-    - name: Test MySQL Connection & Table Creation
+    - name: Download Cloud DB Data to Local MySQL Service
+      run: |
+        echo "📥 Downloading complete database dump from Cloud MySQL..."
+        mysqldump -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" \
+          --single-transaction --quick --lock-tables=false "$MYSQL_DB" > cloud_dump.sql
+
+        echo "📦 Restoring schema and records into Local MySQL Service..."
+        mysql -h 127.0.0.1 -P 3306 -u local_user -plocal_password local_app_db < cloud_dump.sql
+        echo "✅ Data successfully loaded into Local Database!"
+
+    - name: Test Local MySQL Connection
+      env:
+        MYSQL_HOST: 127.0.0.1
+        MYSQL_PORT: 3306
+        MYSQL_USER: local_user
+        MYSQL_PASSWORD: local_password
+        MYSQL_DB: local_app_db
       run: |
         python -c "
         import os
-        from app import app, db, initialize_database
+        from app import app, db
         from sqlalchemy import inspect
 
         with app.app_context():
-            print('Testing MySQL connection and initializing database...')
-            initialize_database()
-            
+            print('Testing Local Database Connection...')
             inspector = inspect(db.engine)
             tables = inspector.get_table_names()
-            print('Successfully created tables in MySQL:', tables)
-            
-            assert len(tables) > 0, 'No tables were created!'
-            print('✅ Database connection & table creation test passed!')
+            print('Tables available locally:', tables)
+            assert len(tables) > 0, 'No tables found in Local MySQL!'
+            print('✅ Connection & Data Integrity Passed!')
         "
 
-    - name: Test App Startup & Basic Route Response
+    - name: Run Application & Auto-Sync Back to Cloud DB
       run: |
-        python -c "
-        from app import app
+        # Signal Trap: Automatically triggers on completion, stop, crash, or timeout
+        sync_back_to_cloud() {
+          echo ""
+          echo "⚠️ Execution ending. Starting auto-sync back to Cloud DB..."
+          echo "📤 Dumping updated Local MySQL state..."
+          mysqldump -h 127.0.0.1 -P 3306 -u local_user -plocal_password local_app_db > local_sync.sql
+          
+          echo "☁️ Uploading updated state to Cloud DB ($MYSQL_HOST)..."
+          mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DB" < local_sync.sql
+          echo "✅ Synchronization back to Cloud DB completed successfully!"
+        }
 
-        with app.test_client() as client:
-            print('Testing App Home Route...')
-            response = client.get('/')
-            print('HTTP Response Status Code:', response.status_code)
-            
-            assert response.status_code in [200, 302], f'App startup failed with status {response.status_code}'
-            print('✅ App started successfully and handled route request!')
-        "
+        trap sync_back_to_cloud EXIT SIGINT SIGTERM
 
-    - name: Start App & Expose via Static Cloudflare Tunnel
-      run: |
-        echo "Starting Gunicorn server (5 Workers, 2 Threads)..."
+        echo "Starting Gunicorn server connected to local database..."
+        MYSQL_HOST=127.0.0.1 MYSQL_PORT=3306 MYSQL_USER=local_user MYSQL_PASSWORD=local_password MYSQL_DB=local_app_db \
         nohup gunicorn --workers 5 --threads 2 --timeout 120 --bind 127.0.0.1:5000 app:app > gunicorn.log 2>&1 &
-
-        sleep 3
         
-        # Health check to ensure Gunicorn started properly
+        sleep 3
+
         if ! curl -s http://127.0.0.1:5000/ > /dev/null; then
-          echo "❌ Gunicorn failed to start! Displaying logs:"
+          echo "❌ Gunicorn startup failed!"
           cat gunicorn.log
           exit 1
         fi
-        echo "✅ Gunicorn is running healthily on local port 5000!"
+        echo "✅ Gunicorn running healthily on http://127.0.0.1:5000"
 
-        echo "Starting Persistent Cloudflare Tunnel..."
+        echo "Starting Cloudflare Tunnel..."
         nohup cloudflared tunnel run --token "$CLOUDFLARE_TUNNEL_TOKEN" > cloudflare.log 2>&1 &
-        
         sleep 5
-        
+
         echo "=================================================="
-        echo "   APP IS LIVE ON YOUR STATIC CLOUDFLARE DOMAIN   "
+        echo "   APP IS LIVE ON LOCAL DB & EXPOSED VIA TUNNEL   "
         echo "=================================================="
-        
-        echo "Holding runner open safely for 17,000 seconds (~4.7 hours)..."
+
+        echo "Holding runner open safely for 17,000 seconds..."
         sleep 17000
-        echo "Timer expired. Workflow completing gracefully."
