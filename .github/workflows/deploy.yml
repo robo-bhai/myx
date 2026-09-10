@@ -68,15 +68,30 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Set up Python 3.10
+    - name: Set up Python 3.10 with Pip Cache
       uses: actions/setup-python@v5
       with:
         python-version: "3.10"
+        cache: 'pip' # Automated caching for pip packages
 
     - name: Install System Dependencies & MySQL Client
       run: |
         sudo apt-get update
         sudo apt-get install -y mysql-client
+
+    - name: Cache Cloudflared Binary
+      id: cache-cloudflared
+      uses: actions/cache@v4
+      with:
+        path: /usr/local/bin/cloudflared
+        key: cloudflared-binary-v1
+
+    - name: Install Cloudflared Tunnel (If not Cached)
+      if: steps.cache-cloudflared.outputs.cache-hit != 'true'
+      run: |
+        curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+        sudo dpkg -i cloudflared.deb
+        sudo cp /usr/bin/cloudflared /usr/local/bin/cloudflared
 
     - name: Install Python Dependencies
       run: |
@@ -84,11 +99,6 @@ jobs:
         pip install flask flask-sqlalchemy flask-login flask-wtf flask-talisman \
                     flask-limiter requests python-dotenv pymysql cryptography \
                     xlsxwriter pywebpush urllib3 werkzeug gunicorn Authlib
-
-    - name: Install Cloudflared Tunnel
-      run: |
-        curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-        sudo dpkg -i cloudflared.deb
 
     - name: Restore Local DB Cache
       id: db-cache
@@ -107,7 +117,6 @@ jobs:
         if [ -f "db_cache/db-dump.sql" ] && [ -s "db_cache/db-dump.sql" ]; then
           echo "⚡ Found cached database dump! Testing SQL file integrity..."
           
-          # Basic SQL structure validation (check if dump contains standard dump footers/headers or tables)
           if grep -qi -E "Table structure|INSERT INTO|CREATE TABLE" db_cache/db-dump.sql; then
             echo "✅ Cached dump is valid! Restoring database state into Local MySQL..."
             if mysql -h 127.0.0.1 -P 3306 -u local_user -plocal_password local_app_db < db_cache/db-dump.sql; then
