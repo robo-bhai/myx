@@ -66,10 +66,10 @@ jobs:
         all_but_latest: true
 
     - name: Checkout Repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up Python 3.10
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: "3.10"
 
@@ -95,34 +95,53 @@ jobs:
       uses: actions/cache/restore@v4
       with:
         path: db_cache/
-        key: mysql-db-latest-cache
+        key: mysql-db-latest-cache-
+        restore-keys: |
+          mysql-db-latest-cache-
 
-    - name: Load Data from Cache (If Cache Hit)
-      if: steps.db-cache.outputs.cache-hit == 'true'
+    - name: Process DB Dump (Cache Check & Load with Corruption Fallback)
       run: |
-        echo "⚡ Cache found! Restoring database state from cached dump..."
-        mysql -h 127.0.0.1 -P 3306 -u local_user -plocal_password local_app_db < db_cache/db-dump.sql
-        echo "✅ Data successfully loaded from Local Cache!"
+        LOAD_SUCCESS=false
 
-    - name: Fetch Fresh Dump from Cloud MySQL (If Cache Miss)
-      if: steps.db-cache.outputs.cache-hit != 'true'
-      run: |
-        echo "📥 Cache miss! Downloading fresh database dump from Cloud MySQL..."
-        mysqldump -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" \
-          --set-gtid-purged=OFF \
-          --no-tablespaces \
-          --single-transaction \
-          --quick \
-          --lock-tables=false \
-          "$MYSQL_DB" > raw_cloud_dump.sql
+        # Check if cache folder and dump file exist, and is not corrupt
+        if [ -f "db_cache/db-dump.sql" ] && [ -s "db_cache/db-dump.sql" ]; then
+          echo "⚡ Found cached database dump! Testing SQL file integrity..."
+          
+          # Basic SQL structure validation (check if dump contains standard dump footers/headers or tables)
+          if grep -qi -E "Table structure|INSERT INTO|CREATE TABLE" db_cache/db-dump.sql; then
+            echo "✅ Cached dump is valid! Restoring database state into Local MySQL..."
+            if mysql -h 127.0.0.1 -P 3306 -u local_user -plocal_password local_app_db < db_cache/db-dump.sql; then
+              echo "✅ Local MySQL restored successfully from Local Cache!"
+              LOAD_SUCCESS=true
+            else
+              echo "⚠️ MySQL failed to import cached file. File might be corrupted."
+            fi
+          else
+            echo "❌ Cached SQL file failed integrity check (file corrupt or empty)."
+          fi
+        else
+          echo "ℹ️ No local cache found."
+        fi
 
-        echo "🧹 Cleaning DEFINER & GTID privilege restricted queries..."
-        sed -E 's/DEFINER=`[^`]+`@`[^`]+`/DEFINER=CURRENT_USER/g' raw_cloud_dump.sql | \
-        sed -E 's/@@GLOBAL\.GTID_PURGED=/\-- @@GLOBAL\.GTID_PURGED=/g' > cloud_dump.sql
+        # Fallback to Cloud MySQL if Cache was missing or corrupt
+        if [ "$LOAD_SUCCESS" = "false" ]; then
+          echo "📥 Fetching fresh database dump from Cloud MySQL..."
+          mysqldump -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" \
+            --set-gtid-purged=OFF \
+            --no-tablespaces \
+            --single-transaction \
+            --quick \
+            --lock-tables=false \
+            "$MYSQL_DB" > raw_cloud_dump.sql
 
-        echo "📦 Restoring schema and records into Local MySQL Service..."
-        mysql -h 127.0.0.1 -P 3306 -u local_user -plocal_password local_app_db < cloud_dump.sql
-        echo "✅ Data successfully fetched & loaded from Cloud DB!"
+          echo "🧹 Cleaning DEFINER & GTID privilege restricted queries..."
+          sed -E 's/DEFINER=`[^`]+`@`[^`]+`/DEFINER=CURRENT_USER/g' raw_cloud_dump.sql | \
+          sed -E 's/@@GLOBAL\.GTID_PURGED=/\-- @@GLOBAL\.GTID_PURGED=/g' > cloud_dump.sql
+
+          echo "📦 Restoring schema and records into Local MySQL Service..."
+          mysql -h 127.0.0.1 -P 3306 -u local_user -plocal_password local_app_db < cloud_dump.sql
+          echo "✅ Data successfully loaded from Cloud DB!"
+        fi
 
     - name: Verify Local MySQL Database Connection
       env:
