@@ -78,19 +78,21 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y mysql-client
 
-    - name: Cache Cloudflared Binary
+    - name: Cache Cloudflared Deb Package
       id: cache-cloudflared
       uses: actions/cache@v4
       with:
-        path: /usr/local/bin/cloudflared
-        key: cloudflared-binary-v1
+        path: cloudflared.deb
+        key: cloudflared-deb-v1
 
-    - name: Install Cloudflared Tunnel (If not Cached)
+    - name: Download Cloudflared (If not Cached)
       if: steps.cache-cloudflared.outputs.cache-hit != 'true'
       run: |
-        curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+        curl -L -o cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+
+    - name: Install Cloudflared
+      run: |
         sudo dpkg -i cloudflared.deb
-        sudo cp /usr/bin/cloudflared /usr/local/bin/cloudflared
 
     - name: Install Python Dependencies
       run: |
