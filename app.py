@@ -301,25 +301,80 @@ def get_provider_balance_direct():
 #                    MODELS
 # ============================================================
 
+from datetime import datetime, timezone
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
+from your_application import db  # Apne application module ka name set karein
+
+
 class User(db.Model, UserMixin):
+    __tablename__ = 'user'
+
+    # Primary & Unique Identifiers
     id = db.Column(db.Integer, primary_key=True)
     uid = db.Column(db.Integer, unique=True, nullable=True, index=True)
-    name = db.Column(db.String(100))
-    username = db.Column(db.String(50), unique=True, nullable=False)
-    email = db.Column(db.String(100), unique=True)
-    password = db.Column(db.String(255), nullable=False)
-    balance = db.Column(db.Float, default=0.0)
-    is_admin = db.Column(db.Boolean, default=False)
-    referred_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    username = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    email = db.Column(db.String(100), unique=True, nullable=True, index=True)
     referral_code = db.Column(db.String(10), unique=True, nullable=True, index=True)
-    preferred_currency = db.Column(db.String(3), default='PKR')
-    new_f = db.Column(db.Boolean, default=False)
     device_fingerprint = db.Column(db.String(255), nullable=True, index=True)
-    sub_plan = db.Column(db.String(20), default='none')
-    sub_expiry = db.Column(db.DateTime, nullable=True)
-    is_sub_active = db.Column(db.Boolean, default=False)
-    last_checkin = db.Column(db.DateTime, nullable=True)
-    streak_count = db.Column(db.Integer, default=0)
+
+    # User Profile Details
+    name = db.Column(db.String(100), nullable=True)
+    password = db.Column(db.String(255), nullable=False)
+    balance = db.Column(db.Float, default=0.0, nullable=False)
+    preferred_currency = db.Column(db.String(3), default='PKR', nullable=False)
+    
+    # Status, Flags & Verification
+    is_admin = db.Column(db.Boolean, default=False, nullable=False)
+    new_f = db.Column(db.Boolean, default=False, nullable=False)
+    is_verified = db.Column(db.Boolean, default=False, nullable=False)
+
+    # Email OTP & Token Verification Columns
+    otp_code = db.Column(db.String(6), nullable=True)
+    verification_token = db.Column(db.String(100), nullable=True, index=True)
+    otp_expiry = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    # Subscription Management
+    sub_plan = db.Column(db.String(20), default='none', nullable=False)
+    sub_expiry = db.Column(db.DateTime(timezone=True), nullable=True)
+    is_sub_active = db.Column(db.Boolean, default=False, nullable=False)
+
+    # Daily Check-in & Gamification
+    last_checkin = db.Column(db.DateTime(timezone=True), nullable=True)
+    streak_count = db.Column(db.Integer, default=0, nullable=False)
+
+    # Self-Referential Foreign Key & Relationship
+    referred_by = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'), nullable=True)
+    referrer = db.relationship('User', remote_side=[id], backref=db.backref('referrals', lazy='dynamic'))
+
+    # Timestamps
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = db.Column(
+        db.DateTime(timezone=True), 
+        default=lambda: datetime.now(timezone.utc), 
+        onupdate=lambda: datetime.now(timezone.utc), 
+        nullable=False
+    )
+
+    # Helper Methods
+    def set_password(self, password: str) -> None:
+        """Hashes and sets the user's password using scrypt/Werkzeug."""
+        self.password = generate_password_hash(password, method='scrypt')
+
+    def check_password(self, password: str) -> bool:
+        """Verifies plain-text password against stored hash."""
+        return check_password_hash(self.password, password)
+
+    def is_subscription_valid(self) -> bool:
+        """Checks if subscription is active and not expired."""
+        if not self.is_sub_active:
+            return False
+        if self.sub_expiry and self.sub_expiry < datetime.now(timezone.utc):
+            return False
+        return True
+
+    def __repr__(self) -> str:
+        return f"<User id={self.id} username='{self.username}' email='{self.email}'>"
 
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -512,6 +567,21 @@ def home():
 
 # ==================== AUTH ====================
 
+import secrets
+import string
+from datetime import datetime, timezone, timedelta
+from flask import request, session, flash, redirect, url_for, render_template
+from flask_login import login_user
+from werkzeug.security import generate_password_hash
+
+# Separate helper file import
+from email_helper import send_brevo_verification_email
+
+def generate_otp(length=6):
+    """Secure 6-digit numeric OTP generation"""
+    return ''.join(secrets.choice(string.digits) for _ in range(length))
+
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     ref_code = request.args.get('ref')
@@ -524,33 +594,34 @@ def register():
             flash(error_msg, 'danger')
             return redirect(url_for('register'))
 
-        name = request.form.get('name')
-        username = request.form.get('username')
+        name = request.form.get('name', '').strip()
+        username = request.form.get('username', '').strip()
         email = request.form.get('email', '').strip().lower()
         password_raw = request.form.get('password')
 
         if not name or not username or not email or not password_raw:
             flash('All fields are required.', 'danger')
             return redirect(url_for('register'))
-        
-        # New strong device fingerprinting call
+
+        # Device Fingerprint Check
         device_hash = get_device_fingerprint()
-
-
         device_account_count = User.query.filter_by(device_fingerprint=device_hash).count()
         if device_account_count >= 2:
             flash("Registration limit reached for this device. Maximum: 2 accounts.", "danger")
             return redirect(url_for('register'))
 
+        # Verified Account Existence Checks
+        verified_email = User.query.filter_by(email=email, is_verified=True).first()
+        if verified_email:
+            flash('Email is already registered.', 'danger')
+            return redirect(url_for('register'))
+
+        verified_username = User.query.filter_by(username=username, is_verified=True).first()
+        if verified_username:
+            flash('Username is already taken.', 'danger')
+            return redirect(url_for('register'))
+
         password_hash = generate_password_hash(password_raw, method='scrypt')
-
-        if User.query.filter_by(email=email).first():
-            flash('Email already exists.', 'danger')
-            return redirect(url_for('register'))
-
-        if User.query.filter_by(username=username).first():
-            flash('Username already exists.', 'danger')
-            return redirect(url_for('register'))
 
         referred_by = None
         if 'ref' in session:
@@ -558,31 +629,140 @@ def register():
             if ref_user:
                 referred_by = ref_user.id
 
-        user = User(
-            uid=generate_six_digit_uid(),
-            name=name,
-            username=username,
-            email=email,
-            password=password_hash,
-            referred_by=referred_by,
-            referral_code=generate_referral_code(),
-            preferred_currency='PKR',
-            device_fingerprint=device_hash
-        )
-        
+        # Verification Codes & Expiry
+        otp_code = generate_otp()
+        verification_token = secrets.token_urlsafe(32)
+        otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=10)
+
+        # Handle existing unverified user record safely (Overwrite instead of deleting)
+        user = User.query.filter_by(email=email, is_verified=False).first()
+        if not user:
+            user = User(email=email)
+
+        user.uid = generate_six_digit_uid()
+        user.name = name
+        user.username = username
+        user.password = password_hash
+        user.referred_by = referred_by
+        user.referral_code = generate_referral_code()
+        user.preferred_currency = 'PKR'
+        user.device_fingerprint = device_hash
+        user.is_verified = False
+        user.otp_code = otp_code
+        user.verification_token = verification_token
+        user.otp_expiry = otp_expiry
+
         try:
             db.session.add(user)
             db.session.commit()
-            session.pop('ref', None)
-            login_user(user, remember=True)
-            flash('Registration successful.', 'success')
-            return redirect(url_for('dashboard'))
+
+            # Generate direct verification URL
+            token_link = url_for('verify_token', token=verification_token, _external=True)
+
+            # Send Email via Brevo API Helper
+            email_sent = send_brevo_verification_email(email, name, otp_code, token_link)
+
+            if not email_sent:
+                db.session.rollback()
+                flash('Failed to send verification email. Please try again.', 'danger')
+                return redirect(url_for('register'))
+
+            session['pending_email'] = email
+            flash('A verification code and link have been sent to your email address.', 'info')
+            return redirect(url_for('verify_otp'))
+
         except Exception as e:
             db.session.rollback()
             app.logger.error(f"Registration Error: {str(e)}")
             flash('Internal error during registration.', 'danger')
 
     return render_template('register.html', captcha_img=generate_captcha_data())
+
+
+@app.route('/verify-otp', methods=['GET', 'POST'])
+def verify_otp():
+    email = session.get('pending_email')
+    if not email:
+        flash('Session expired or invalid request. Please register again.', 'warning')
+        return redirect(url_for('register'))
+
+    user = User.query.filter_by(email=email, is_verified=False).first()
+    if not user:
+        flash('User account not found or already verified.', 'danger')
+        return redirect(url_for('register'))
+
+    if request.method == 'POST':
+        input_otp = request.form.get('otp', '').strip()
+
+        if not input_otp:
+            flash('Please enter the OTP code.', 'danger')
+            return render_template('verify_otp.html', email=email)
+
+        # Expiry Check
+        now_utc = datetime.now(timezone.utc)
+        user_expiry = user.otp_expiry.replace(tzinfo=timezone.utc) if user.otp_expiry and user.otp_expiry.tzinfo is None else user.otp_expiry
+        
+        if user_expiry and user_expiry < now_utc:
+            flash('OTP code has expired. Please register again.', 'danger')
+            db.session.delete(user)
+            db.session.commit()
+            session.pop('pending_email', None)
+            return redirect(url_for('register'))
+
+        # OTP Verification Success
+        if user.otp_code and user.otp_code == input_otp:
+            user.is_verified = True
+            user.otp_code = None
+            user.verification_token = None
+            user.otp_expiry = None
+            db.session.commit()
+
+            session.pop('pending_email', None)
+            session.pop('ref', None)
+            login_user(user, remember=True)
+            flash('Account verified successfully!', 'success')
+            return redirect(url_for('dashboard'))
+        else:
+            flash('Invalid OTP code. Please check your email and try again.', 'danger')
+
+    return render_template('verify_otp.html', email=email)
+
+
+@app.route('/verify-token/<token>', methods=['GET'])
+def verify_token(token):
+    if not token:
+        flash('Invalid verification token.', 'danger')
+        return redirect(url_for('register'))
+
+    user = User.query.filter_by(verification_token=token, is_verified=False).first()
+
+    if not user:
+        flash('Link is invalid or account is already verified.', 'danger')
+        return redirect(url_for('register'))
+
+    # Expiry Check
+    now_utc = datetime.now(timezone.utc)
+    user_expiry = user.otp_expiry.replace(tzinfo=timezone.utc) if user.otp_expiry and user.otp_expiry.tzinfo is None else user.otp_expiry
+
+    if user_expiry and user_expiry < now_utc:
+        flash('Verification link has expired. Please register again.', 'danger')
+        db.session.delete(user)
+        db.session.commit()
+        session.pop('pending_email', None)
+        return redirect(url_for('register'))
+
+    # Token Verification Success
+    user.is_verified = True
+    user.otp_code = None
+    user.verification_token = None
+    user.otp_expiry = None
+    db.session.commit()
+
+    session.pop('pending_email', None)
+    session.pop('ref', None)
+    login_user(user, remember=True)
+    flash('Email verified successfully! Welcome to your dashboard.', 'success')
+    return redirect(url_for('dashboard'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -2159,80 +2339,101 @@ def force_sync_services():
 # ==================== DATABASE INITIALIZATION ====================
 
 import os
+import secrets
+import string
 from sqlalchemy import inspect, text
 
-def initialize_database():
-    try:
-        db.create_all()
-        
-        inspector = inspect(db.engine)
-        user_cols = [c['name'] for c in inspector.get_columns('user')]
-        freetrial_cols = [c['name'] for c in inspector.get_columns('free_trial_link')]
-        
-        with db.engine.connect() as conn:
-            if 'new_f' not in user_cols:
-                conn.execute(text("ALTER TABLE user ADD COLUMN new_f BOOLEAN DEFAULT FALSE"))
-                app.logger.info("Migration: Added 'new_f' column to User table.")
+def generate_referral_code(length=8):
+    """Generates a secure, unique alphanumeric referral code."""
+    chars = string.ascii_uppercase + string.digits
+    return ''.join(secrets.choice(chars) for _ in range(length))
 
-            if 'referral_code' not in user_cols:
-                conn.execute(text("ALTER TABLE user ADD COLUMN referral_code VARCHAR(10)"))
-                app.logger.info("Migration: Added 'referral_code' column to User table.")
+def initialize_database(app, db):
+    """
+    Production-safe and idempotent database schema auto-patcher and initializer.
+    """
+    with app.app_context():
+        try:
+            # 1. Ensure basic tables exist
+            db.create_all()
             
-            if 'preferred_currency' not in user_cols:
-                conn.execute(text("ALTER TABLE user ADD COLUMN preferred_currency VARCHAR(3) DEFAULT 'PKR'"))
-                app.logger.info("Migration: Added 'preferred_currency' column to User table.")
+            inspector = inspect(db.engine)
+            existing_tables = inspector.get_table_names()
 
-            if 'last_checkin' not in user_cols:
-                conn.execute(text("ALTER TABLE user ADD COLUMN last_checkin DATETIME"))
-                app.logger.info("Migration: Added 'last_checkin' column to User table.")
+            # 2. Schema Auto-Migration via Direct SQL Connection
+            with db.engine.begin() as conn:
+                # User Table Migrations
+                if 'user' in existing_tables:
+                    user_cols = [c['name'] for c in inspector.get_columns('user')]
 
-            if 'streak_count' not in user_cols:
-                conn.execute(text("ALTER TABLE user ADD COLUMN streak_count INTEGER DEFAULT 0"))
-                app.logger.info("Migration: Added 'streak_count' column to User table.")
-            
-            if 'device_fingerprint' not in freetrial_cols:
-                conn.execute(text("ALTER TABLE free_trial_link ADD COLUMN device_fingerprint VARCHAR(255)"))
-                app.logger.info("Migration: Added 'device_fingerprint' column to FreeTrialLink table.")
-            
-            conn.commit()
+                    if 'new_f' not in user_cols:
+                        conn.execute(text("ALTER TABLE user ADD COLUMN new_f BOOLEAN DEFAULT FALSE"))
+                        app.logger.info("Migration: Added 'new_f' column to User table.")
 
-        users_without_codes = User.query.filter(
-            (User.referral_code == None) | (User.referral_code == '')
-        ).all()
-        
-        if users_without_codes:
-            for user in users_without_codes:
-                user.referral_code = generate_referral_code()
-            db.session.commit()
-            app.logger.info(f"Integrity: Generated codes for {len(users_without_codes)} users.")
-        
-        if not ExchangeRate.query.first():
-            app.logger.info("Initializing exchange rates...")
-            sync_exchange_rates()
-            
-        if not SystemSetting.query.filter_by(key='is_ordering_enabled').first():
-            db.session.add(SystemSetting(key='is_ordering_enabled', value=True))
-            db.session.commit()
+                    if 'referral_code' not in user_cols:
+                        conn.execute(text("ALTER TABLE user ADD COLUMN referral_code VARCHAR(10)"))
+                        app.logger.info("Migration: Added 'referral_code' column to User table.")
 
-        # Automatic Admin Promotion from Secret Variable
-        admin_username = os.getenv('ADMIN_USERNAME')
-        if admin_username:
-            admin_user = User.query.filter_by(username=admin_username).first()
-            if admin_user:
-                if not admin_user.is_admin:
-                    admin_user.is_admin = True
-                    db.session.commit()
-                    app.logger.info(f"Admin status granted to {admin_username}.")
+                    if 'preferred_currency' not in user_cols:
+                        conn.execute(text("ALTER TABLE user ADD COLUMN preferred_currency VARCHAR(3) DEFAULT 'PKR'"))
+                        app.logger.info("Migration: Added 'preferred_currency' column to User table.")
+
+                    if 'last_checkin' not in user_cols:
+                        conn.execute(text("ALTER TABLE user ADD COLUMN last_checkin DATETIME"))
+                        app.logger.info("Migration: Added 'last_checkin' column to User table.")
+
+                    if 'streak_count' not in user_cols:
+                        conn.execute(text("ALTER TABLE user ADD COLUMN streak_count INTEGER DEFAULT 0"))
+                        app.logger.info("Migration: Added 'streak_count' column to User table.")
+
+                # FreeTrialLink Table Migrations
+                if 'free_trial_link' in existing_tables:
+                    freetrial_cols = [c['name'] for c in inspector.get_columns('free_trial_link')]
+
+                    if 'device_fingerprint' not in freetrial_cols:
+                        conn.execute(text("ALTER TABLE free_trial_link ADD COLUMN device_fingerprint VARCHAR(255)"))
+                        app.logger.info("Migration: Added 'device_fingerprint' column to FreeTrialLink table.")
+
+            # 3. Data Integrity: Backfill Referral Codes for Existing Users
+            users_without_codes = User.query.filter(
+                (User.referral_code == None) | (User.referral_code == '')
+            ).all()
+
+            if users_without_codes:
+                for user in users_without_codes:
+                    user.referral_code = generate_referral_code()
+                db.session.commit()
+                app.logger.info(f"Integrity: Generated referral codes for {len(users_without_codes)} existing users.")
+
+            # 4. System Settings & Default Values Setup
+            if not ExchangeRate.query.first():
+                app.logger.info("Initializing exchange rates...")
+                sync_exchange_rates()
+
+            if not SystemSetting.query.filter_by(key='is_ordering_enabled').first():
+                db.session.add(SystemSetting(key='is_ordering_enabled', value=True))
+                db.session.commit()
+                app.logger.info("SystemSetting: 'is_ordering_enabled' default set to True.")
+
+            # 5. Automatic Admin Promotion from Secret Variable
+            admin_username = os.getenv('ADMIN_USERNAME')
+            if admin_username:
+                admin_user = User.query.filter_by(username=admin_username).first()
+                if admin_user:
+                    if not admin_user.is_admin:
+                        admin_user.is_admin = True
+                        db.session.commit()
+                        app.logger.info(f"Admin Access: Granted admin privileges to '{admin_username}'.")
+                    else:
+                        app.logger.info(f"Admin Access: User '{admin_username}' is already an admin.")
                 else:
-                    app.logger.info(f"User {admin_username} is already an admin. Skipping promotion.")
-            else:
-                app.logger.warning(f"Admin user '{admin_username}' not found in database.")
-            
-        app.logger.info("Database successfully initialized and migrated.")
-            
-    except Exception as e:
-        app.logger.error(f"Initialization failure: {str(e)}")
-        db.session.rollback()
+                    app.logger.warning(f"Admin Access: Configured ADMIN_USERNAME '{admin_username}' was not found in database.")
+
+            app.logger.info("Database initialization and schema auto-patch completed successfully.")
+
+        except Exception as e:
+            app.logger.error(f"Database Initialization Failure: {str(e)}", exc_info=True)
+            db.session.rollback()
 
 
 # ==================== MAIN ====================

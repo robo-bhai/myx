@@ -1,0 +1,275 @@
+{% extends 'base.html' %}
+{% block title %}Verify Email | Hadi88{% endblock %}
+{% block content %}
+<style>
+  :root {
+    --otp-primary: var(--primary-gold);
+    --otp-bg: var(--card-bg);
+    --otp-text: var(--text-main);
+    --otp-border: var(--glass-border);
+    --otp-input-bg: rgba(255, 215, 0, 0.03);
+    --otp-badge-bg: linear-gradient(135deg, var(--primary-gold) 0%, #e0a800 100%);
+  }
+
+  [data-theme="light"] {
+    --otp-input-bg: #f8f9fa;
+    --otp-badge-bg: linear-gradient(135deg, #FFD700 0%, #ccac00 100%);
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .main-heading, .sub-heading, .form-label, .small-text, .timer-text {
+      color: var(--text-main) !important;
+  }
+
+  .legal-link, .btn-resend {
+      color: var(--primary-gold) !important;
+  }
+
+  .otp-wrapper {
+    max-width: 480px;
+    width: 95%;
+    margin: 4rem auto;
+    position: relative;
+    z-index: 10;
+  }
+
+  .form-container {
+    background: var(--otp-bg);
+    backdrop-filter: blur(10px);
+    padding: 2.5rem 2rem;
+    border-radius: 1.5rem;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2), 
+                0 0 0 1px var(--otp-border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .form-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, var(--otp-primary), transparent);
+    opacity: 0.8;
+  }
+
+  .hero-badge {
+    background: var(--otp-badge-bg);
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    padding: 6px 16px;
+    border-radius: 50px;
+    display: inline-block;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+    color: #000 !important;
+  }
+
+  .main-heading {
+    font-size: 1.7rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    text-align: center;
+  }
+
+  .sub-heading {
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+    text-align: center;
+    opacity: 0.85;
+  }
+
+  /* --- 6 Digit Split Box Input --- */
+  .otp-input-group {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 2rem 0;
+  }
+
+  .otp-digit {
+    width: 50px;
+    height: 60px;
+    background-color: var(--otp-input-bg);
+    border: 1px solid var(--otp-border);
+    border-radius: 10px;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--primary-gold) !important;
+    transition: all 0.2s ease;
+  }
+
+  .otp-digit:focus {
+    background-color: var(--otp-bg);
+    border-color: var(--otp-primary);
+    box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.2);
+    outline: none;
+  }
+
+  .btn-verify {
+    background: linear-gradient(90deg, var(--otp-primary), #ffdb58);
+    color: #000 !important;
+    border: none;
+    width: 100%;
+    padding: 1rem;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    margin-top: 1rem;
+    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.2);
+    transition: all 0.3s ease;
+  }
+
+  .btn-verify:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 193, 7, 0.4);
+    opacity: 0.9;
+  }
+
+  .resend-box {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--otp-border);
+    text-align: center;
+  }
+
+  .btn-resend {
+    background: none;
+    border: none;
+    font-weight: 700;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0;
+  }
+
+  .btn-resend:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    text-decoration: none;
+  }
+</style>
+
+<div class="otp-wrapper">
+    <div class="form-container">
+        
+        <div class="text-center">
+            <div class="hero-badge">
+                🔑 Verification Required
+            </div>
+            
+            <h1 class="main-heading">Verify Your Email</h1>
+            <p class="sub-heading">
+                We sent a 6-digit OTP code to <br>
+                <strong style="color: var(--primary-gold);">{{ email }}</strong>
+            </p>
+        </div>
+
+        <form method="POST" action="{{ url_for('verify_otp') }}" id="otp-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" id="full-otp" name="otp" value="">
+
+            <div class="otp-input-group">
+                <input type="text" maxlength="1" class="otp-digit" pattern="[0-9]" inputmode="numeric" required autofocus>
+                <input type="text" maxlength="1" class="otp-digit" pattern="[0-9]" inputmode="numeric" required>
+                <input type="text" maxlength="1" class="otp-digit" pattern="[0-9]" inputmode="numeric" required>
+                <input type="text" maxlength="1" class="otp-digit" pattern="[0-9]" inputmode="numeric" required>
+                <input type="text" maxlength="1" class="otp-digit" pattern="[0-9]" inputmode="numeric" required>
+                <input type="text" maxlength="1" class="otp-digit" pattern="[0-9]" inputmode="numeric" required>
+            </div>
+
+            <button type="submit" class="btn-verify">
+                Verify & Complete
+            </button>
+        </form>
+
+        <div class="resend-box">
+            <p class="timer-text" style="font-size: 0.85rem; margin-bottom: 8px;">
+                Code expires in: <span id="countdown" style="font-weight: 700; color: var(--primary-gold);">10:00</span>
+            </p>
+            <p class="small-text" style="font-size: 0.85rem;">
+                Didn't receive the email? Check spam or 
+                <a href="{{ url_for('register') }}" class="legal-link">Register again</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    const inputs = $('.otp-digit');
+
+    // Auto focus next/prev logic
+    inputs.on('input', function(e) {
+        const val = $(this).val();
+        if (val.length === 1) {
+            const next = $(this).next('.otp-digit');
+            if (next.length) next.focus();
+        }
+        updateFullOtp();
+    });
+
+    inputs.on('keydown', function(e) {
+        if (e.key === 'Backspace' && !$(this).val()) {
+            const prev = $(this).prev('.otp-digit');
+            if (prev.length) prev.focus();
+        }
+    });
+
+    // Handle full string paste
+    inputs.first().on('paste', function(e) {
+        const pastedData = e.originalEvent.clipboardData.getData('text').trim();
+        if (pastedData.length === 6 && /^\d+$/.test(pastedData)) {
+            inputs.each(function(i) {
+                $(this).val(pastedData[i]);
+            });
+            inputs.last().focus();
+            updateFullOtp();
+        }
+    });
+
+    function updateFullOtp() {
+        let code = '';
+        inputs.each(function() {
+            code += $(this).val();
+        });
+        $('#full-otp').val(code);
+    }
+
+    // 10-Minute Countdown Timer
+    let duration = 10 * 60;
+    const display = $('#countdown');
+    
+    const timer = setInterval(function() {
+        let minutes = parseInt(duration / 60, 10);
+        let seconds = parseInt(duration % 60, 10);
+
+        minutes = minutes < 10 ? "0" + minutes : minutes;
+        seconds = seconds < 10 ? "0" + seconds : seconds;
+
+        display.text(minutes + ":" + seconds);
+
+        if (--duration < 0) {
+            clearInterval(timer);
+            display.text("EXPIRED").css("color", "#ff4444");
+        }
+    }, 1000);
+});
+</script>
+{% endblock %}
+

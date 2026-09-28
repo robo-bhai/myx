@@ -2,7 +2,6 @@
 {% block title %}Register | Join Hadi88{% endblock %}
 {% block content %}
 <style>
-  /* --- Local Overrides using Base Variables --- */
   :root {
     --register-primary: var(--primary-gold);
     --register-bg: var(--card-bg);
@@ -12,31 +11,26 @@
     --register-badge-bg: linear-gradient(135deg, var(--primary-gold) 0%, #e0a800 100%);
   }
 
-  /* Light Mode Specific Overrides */
   [data-theme="light"] {
     --register-input-bg: #f8f9fa;
     --register-badge-bg: linear-gradient(135deg, #FFD700 0%, #ccac00 100%);
   }
 
   body {
-    /* Background handled by base.html */
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
   }
 
-  /* Strict Font Color Enforcement for Light/Dark Mode Branding */
   .main-heading, .sub-heading, .form-label, .form-control, .legal-check-container, .promo-text, .small-text {
       color: var(--text-main) !important;
   }
 
-  /* Primary Branding Font Colors (Yellow/Orange) */
   .legal-link, .btn-register-outline, .captcha-refresh-btn {
       color: var(--primary-gold) !important;
   }
 
-  /* --- Main Card Container --- */
   .login-wrapper {
     max-width: 500px;
     width: 95%;
@@ -57,7 +51,6 @@
     transition: background 0.3s ease, box-shadow 0.3s ease;
   }
 
-  /* Decorative Glow */
   .form-container::before {
     content: '';
     position: absolute;
@@ -68,8 +61,6 @@
     background: linear-gradient(90deg, transparent, var(--register-primary), transparent);
     opacity: 0.8;
   }
-
-  /* --- Typography --- */
   
   .main-heading {
     font-size: 1.8rem;
@@ -96,14 +87,9 @@
     display: inline-block;
     margin-bottom: 1rem;
     box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
-  }
-  
-  /* Text on badge follows branding logic: Black on Yellow/Orange */
-  .hero-badge {
-      color: #000 !important;
+    color: #000 !important;
   }
 
-  /* --- Form Elements --- */
   .form-group {
     margin-bottom: 1.25rem;
     position: relative;
@@ -139,7 +125,6 @@
     outline: none;
   }
 
-  /* --- Validation Errors --- */
   .error-message {
     color: #ff4444;
     font-size: 0.8rem;
@@ -152,7 +137,6 @@
       color: #cc0000;
   }
 
-  /* --- Captcha --- */
   .captcha-container {
     background: var(--register-input-bg);
     border: 1px solid var(--register-border);
@@ -170,7 +154,7 @@
   }
 
   .captcha-img-box {
-    background: #fff; /* Always white for readability */
+    background: #fff;
     flex-grow: 1;
     border-radius: 6px;
     border: 1px dashed var(--register-border);
@@ -199,10 +183,9 @@
     transform: rotate(180deg);
   }
 
-  /* --- Buttons --- */
   .btn-login {
     background: linear-gradient(90deg, var(--register-primary), #ffdb58);
-    color: #000 !important; /* Black text for best contrast on gold/yellow */
+    color: #000 !important;
     border: none;
     width: 100%;
     padding: 1rem;
@@ -223,7 +206,6 @@
     opacity: 0.9;
   }
 
-  /* --- Google Auth Button & Separator --- */
   .auth-divider {
     display: flex;
     align-items: center;
@@ -273,7 +255,6 @@
     color: var(--register-text) !important;
   }
 
-  /* Disabled state styling for Google button */
   .btn-google.disabled {
     opacity: 0.5;
     cursor: not-allowed !important;
@@ -285,7 +266,6 @@
     height: 20px;
   }
 
-  /* --- Legal & Footer --- */
   .legal-check-container {
     font-size: 0.8rem;
     display: flex;
@@ -343,7 +323,6 @@
     color: #000 !important;
   }
 
-  /* --- Toast --- */
   .toast-container {
     position: fixed;
     bottom: 20px;
@@ -439,7 +418,7 @@
                 </label>
             </div>
 
-            <button type="submit" class="btn-login">
+            <button type="submit" id="btn-submit" class="btn-login">
                 Register Now
             </button>
         </form>
@@ -515,12 +494,10 @@ $(document).ready(function() {
     }
   }
 
-  // Monitor Checkbox state changes
   $('#terms_agree').on('change', function() {
     updateGoogleBtnState();
   });
 
-  // Initial check on load
   updateGoogleBtnState();
 
   function checkUserInputs() {
@@ -556,10 +533,13 @@ $(document).ready(function() {
       e.preventDefault();
       if (emailExists) showToast('Email already exists.');
       else if (usernameExists) showToast('Username already exists.');
+      return false;
     }
+
+    // Show sending feedback on submit button
+    $('#btn-submit').prop('disabled', true).text('Sending OTP...');
   });
 
-  /* Strict Control over Google Sign Up Button */
   $('#btn-google-signup').on('click', function(e) {
     e.preventDefault();
     e.stopPropagation();

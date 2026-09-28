@@ -55,6 +55,7 @@ jobs:
       Service_w: ${{ secrets.SERVICE_W }}
       EXCHANGE_API_KEY: ${{ secrets.EXCHANGE_API_KEY }}
       CLOUDFLARE_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
+      BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
 
       FLASK_ENV: production
 
