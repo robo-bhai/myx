@@ -304,7 +304,7 @@ def get_provider_balance_direct():
 from datetime import datetime, timezone
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from your_application import db  # Apne application module ka name set karein
+from app import db  # Apne application module ka name set karein
 
 
 class User(db.Model, UserMixin):
