@@ -2403,5 +2403,5 @@ def initialize_database(app, db):
 if __name__ == "__main__":
     with app.app_context():
         initialize_database()
-    is_debug = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+    is_debug = os.environ.get('FLASK_DEBUG', 'True').lower() == 'true'
     app.run(debug=is_debug, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
