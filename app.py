@@ -2350,51 +2350,14 @@ def generate_referral_code(length=8):
 
 def initialize_database(app, db):
     """
-    Production-safe and idempotent database schema auto-patcher and initializer.
+    Simple database initializer without auto-migrations.
     """
     with app.app_context():
         try:
             # 1. Ensure basic tables exist
             db.create_all()
-            
-            inspector = inspect(db.engine)
-            existing_tables = inspector.get_table_names()
 
-            # 2. Schema Auto-Migration via Direct SQL Connection
-            with db.engine.begin() as conn:
-                # User Table Migrations
-                if 'user' in existing_tables:
-                    user_cols = [c['name'] for c in inspector.get_columns('user')]
-
-                    if 'new_f' not in user_cols:
-                        conn.execute(text("ALTER TABLE user ADD COLUMN new_f BOOLEAN DEFAULT FALSE"))
-                        app.logger.info("Migration: Added 'new_f' column to User table.")
-
-                    if 'referral_code' not in user_cols:
-                        conn.execute(text("ALTER TABLE user ADD COLUMN referral_code VARCHAR(10)"))
-                        app.logger.info("Migration: Added 'referral_code' column to User table.")
-
-                    if 'preferred_currency' not in user_cols:
-                        conn.execute(text("ALTER TABLE user ADD COLUMN preferred_currency VARCHAR(3) DEFAULT 'PKR'"))
-                        app.logger.info("Migration: Added 'preferred_currency' column to User table.")
-
-                    if 'last_checkin' not in user_cols:
-                        conn.execute(text("ALTER TABLE user ADD COLUMN last_checkin DATETIME"))
-                        app.logger.info("Migration: Added 'last_checkin' column to User table.")
-
-                    if 'streak_count' not in user_cols:
-                        conn.execute(text("ALTER TABLE user ADD COLUMN streak_count INTEGER DEFAULT 0"))
-                        app.logger.info("Migration: Added 'streak_count' column to User table.")
-
-                # FreeTrialLink Table Migrations
-                if 'free_trial_link' in existing_tables:
-                    freetrial_cols = [c['name'] for c in inspector.get_columns('free_trial_link')]
-
-                    if 'device_fingerprint' not in freetrial_cols:
-                        conn.execute(text("ALTER TABLE free_trial_link ADD COLUMN device_fingerprint VARCHAR(255)"))
-                        app.logger.info("Migration: Added 'device_fingerprint' column to FreeTrialLink table.")
-
-            # 3. Data Integrity: Backfill Referral Codes for Existing Users
+            # 2. Backfill Referral Codes for Existing Users
             users_without_codes = User.query.filter(
                 (User.referral_code == None) | (User.referral_code == '')
             ).all()
@@ -2403,9 +2366,9 @@ def initialize_database(app, db):
                 for user in users_without_codes:
                     user.referral_code = generate_referral_code()
                 db.session.commit()
-                app.logger.info(f"Integrity: Generated referral codes for {len(users_without_codes)} existing users.")
+                app.logger.info(f"Integrity: Generated referral codes for {len(users_without_codes)} users.")
 
-            # 4. System Settings & Default Values Setup
+            # 3. System Settings & Default Values Setup
             if not ExchangeRate.query.first():
                 app.logger.info("Initializing exchange rates...")
                 sync_exchange_rates()
@@ -2415,7 +2378,7 @@ def initialize_database(app, db):
                 db.session.commit()
                 app.logger.info("SystemSetting: 'is_ordering_enabled' default set to True.")
 
-            # 5. Automatic Admin Promotion from Secret Variable
+            # 4. Automatic Admin Promotion from Secret Variable
             admin_username = os.getenv('ADMIN_USERNAME')
             if admin_username:
                 admin_user = User.query.filter_by(username=admin_username).first()
@@ -2425,16 +2388,15 @@ def initialize_database(app, db):
                         db.session.commit()
                         app.logger.info(f"Admin Access: Granted admin privileges to '{admin_username}'.")
                     else:
-                        app.logger.info(f"Admin Access: User '{admin_username}' is already an admin.")
+                        app.logger.info(f"User '{admin_username}' is already an admin.")
                 else:
-                    app.logger.warning(f"Admin Access: Configured ADMIN_USERNAME '{admin_username}' was not found in database.")
+                    app.logger.warning(f"Admin Access: Configured ADMIN_USERNAME '{admin_username}' was not found.")
 
-            app.logger.info("Database initialization and schema auto-patch completed successfully.")
+            app.logger.info("Database initialization completed successfully.")
 
         except Exception as e:
             app.logger.error(f"Database Initialization Failure: {str(e)}", exc_info=True)
             db.session.rollback()
-
 
 # ==================== MAIN ====================
 
