@@ -2401,7 +2401,15 @@ def initialize_database(app, db):
 # ==================== MAIN ====================
 
 if __name__ == "__main__":
+    is_debug = os.environ.get('FLASK_DEBUG', 'True').lower() in ['true', '1', 't']
+    app.debug = is_debug  # App instance par directly enable karein
+
     with app.app_context():
-        initialize_database()
-    is_debug = os.environ.get('FLASK_DEBUG', 'True').lower() == 'true'
+        try:
+            initialize_database(app, db)
+        except Exception as e:
+            app.logger.error(f"Database initialization error on startup: {e}")
+
     app.run(debug=is_debug, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
+    
