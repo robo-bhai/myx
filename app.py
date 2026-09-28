@@ -2400,16 +2400,14 @@ def initialize_database(app, db):
 
 # ==================== MAIN ====================
 
+# Force Flask to show interactive debugger & full stacktrace in browser
+app.config['DEBUG'] = True
+app.config['TESTING'] = False
+app.config['PROPAGATE_EXCEPTIONS'] = True
+
 if __name__ == "__main__":
-    is_debug = os.environ.get('FLASK_DEBUG', 'True').lower() in ['true', '1', 't']
-    app.debug = is_debug  # App instance par directly enable karein
-
     with app.app_context():
-        try:
-            initialize_database(app, db)
-        except Exception as e:
-            app.logger.error(f"Database initialization error on startup: {e}")
+        # Exception block hata diya hai taake crash hone par screen par red trace dikhe
+        initialize_database(app, db)
 
-    app.run(debug=is_debug, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
-
-    
+    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
