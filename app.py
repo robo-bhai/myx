@@ -418,7 +418,7 @@ def send_brevo_deposit_alert(
     # Recipients List: Admin + Depositor
     recipients = [
         {
-            "email": "team@hadi88.online",  # Admin Email
+            "email": "no-reply@hadi88.online",  # Admin Email
             "name": "Admin Support",
         }
     ]
