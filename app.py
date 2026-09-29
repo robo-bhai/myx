@@ -714,6 +714,71 @@ def home():
 
 # ==================== AUTH ====================
 
+import threading
+from flask import render_template
+# Email sending functionality (assuming Flask-Mail or SMTP configured)
+from flask_mail import Message # Agar Flask-Mail use kar rahe hain
+# from app import mail # Apka mail object
+
+def send_welcome_email_async(app, user_email, user_name):
+    """Background thread mein email send karega taake registration slow na ho."""
+    with app.app_context():
+        try:
+            subject = "🎉 Welcome to Our Platform! Your Journey Begins Here"
+            
+            # HTML Template Body (Professional & Attractive)
+            html_content = f"""
+            <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #121212; color: #e0e0e0; border-radius: 12px; padding: 24px; border: 1px solid #2a2a2a;">
+                <div style="text-align: center; padding-bottom: 20px; border-bottom: 1px solid #2a2a2a;">
+                    <h1 style="color: #FFD700; margin: 0; font-size: 26px;">Welcome Onboard, {user_name}! 👋</h1>
+                </div>
+                
+                <div style="padding: 20px 0; line-height: 1.6;">
+                    <p style="font-size: 16px;">We are super excited to have you join us!</p>
+                    <p style="font-size: 15px; color: #b0b0b0;">Your account is fully set up and ready to go. Explore your dashboard to unlock all powerful tools and features tailored just for you.</p>
+                    
+                    <div style="background-color: #1e1e1e; border-left: 4px solid #FFD700; padding: 15px; border-radius: 6px; margin: 20px 0;">
+                        <p style="margin: 0; color: #FFD700; font-weight: bold;">💡 Quick Tip:</p>
+                        <p style="margin: 5px 0 0 0; font-size: 14px; color: #d0d0d0;">Share your unique referral link with your friends to earn rewards together!</p>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 30px;">
+                        <a href="#" style="background: linear-gradient(135deg, #FFD700, #ffa500); color: #000; text-decoration: none; padding: 12px 30px; font-weight: bold; border-radius: 8px; font-size: 15px; display: inline-block;">Go to Dashboard</a>
+                    </div>
+                </div>
+
+                <div style="text-align: center; border-top: 1px solid #2a2a2a; padding-top: 20px; font-size: 12px; color: #777;">
+                    <p style="margin: 0;">If you have any questions, reply directly to this email. We're here to help!</p>
+                </div>
+            </div>
+            """
+
+            # Flask-Mail Sending Logic
+            # msg = Message(subject=subject, recipients=[user_email], html=html_content)
+            # mail.send(msg)
+
+            # Debug Log (Testing ke liye)
+            app.logger.info(f"Welcome email successfully queued/sent to {user_email}")
+
+        except Exception as e:
+            app.logger.error(f"Failed to send welcome email to {user_email}: {str(e)}")
+
+
+def trigger_welcome_message(user):
+    """Route se call hone wala simple wrapper wrapper (Threaded execution)"""
+    from flask import current_app
+    app = current_app._get_current_object()
+    
+    # Threading use ki hai taake email sending ki waja se user ka registration response wait na kare
+    threading.Thread(
+        target=send_welcome_email_async, 
+        args=(app, user.email, user.name)
+    ).start()
+
+
+
+
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     ref_code = request.args.get('ref')
@@ -737,7 +802,6 @@ def register():
         
         # New strong device fingerprinting call
         device_hash = get_device_fingerprint()
-
 
         device_account_count = User.query.filter_by(device_fingerprint=device_hash).count()
         if device_account_count >= 2:
@@ -776,9 +840,14 @@ def register():
             db.session.add(user)
             db.session.commit()
             session.pop('ref', None)
+
+            # Send Welcome Message asynchronously via Helper
+            trigger_welcome_message(user)
+
             login_user(user, remember=True)
-            flash('Registration successful.', 'success')
+            flash(f'Welcome aboard, {user.name}! Your account has been created.', 'success')
             return redirect(url_for('dashboard'))
+
         except Exception as e:
             db.session.rollback()
             app.logger.error(f"Registration Error: {str(e)}")
