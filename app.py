@@ -418,7 +418,7 @@ def send_brevo_deposit_alert(
     # Recipients List: Admin + Depositor
     recipients = [
         {
-            "email": "no-reply@hadi88.online",  # Admin Email
+            "email": "team@hadi88.online",  # Admin Email
             "name": "Admin Support",
         }
     ]
@@ -579,7 +579,7 @@ def send_brevo_deposit_alert(
     payload = {
         "sender": {
             "name": "Hadi88 Support",
-            "email": "no-reply@hadi88.online",
+            "email": "team@hadi88.online",
         },
         "to": recipients,
         "subject": f"Deposit Request Submitted: ${amount:,.2f} [TXN: {txn_id}]",
@@ -873,7 +873,7 @@ def send_brevo_welcome_email(user_email, user_name):
     payload = {
         "sender": {
             "name": "Hadi88 Support",
-            "email": "no-reply@hadi88.online",  # Apna verified Brevo sender email yahan likhein
+            "email": "team@hadi88.online",  # Apna verified Brevo sender email yahan likhein
         },
         "to": [{"email": user_email, "name": user_name}],
         "subject": "🎉 Welcome to Hadi88 | Elevate Your Digital Footprint",
@@ -2232,7 +2232,7 @@ def send_brevo_deposit_status_email(
     payload = {
         "sender": {
             "name": "Hadi88 Support",
-            "email": "no-reply@hadi88.online",
+            "email": "team@hadi88.online",
         },
         "to": [{"email": user_email, "name": user_name}],
         "subject": subject,
