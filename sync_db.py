@@ -1,4 +1,4 @@
-s
+import os
 import logging
 from sqlalchemy import create_engine, inspect, text
 from dotenv import load_dotenv
