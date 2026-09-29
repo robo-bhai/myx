@@ -79,24 +79,6 @@ jobs:
                     flask-limiter requests python-dotenv pymysql cryptography \
                     xlsxwriter pywebpush urllib3 werkzeug gunicorn Authlib
 
-    - name: Fetch Cloud DB Dump to Local Temp DB
-      env:
-        CLOUD_HOST: ${{ secrets.DB_HOST }}
-        CLOUD_PORT: ${{ secrets.DB_PORT }}
-        CLOUD_USER: ${{ secrets.DB_USER }}
-        CLOUD_PASS: ${{ secrets.MYSQL_PASSWORD }}
-        CLOUD_NAME: ${{ secrets.DB_NAME }}
-      run: |
-        echo "🧪 Downloading fresh read-only schema dump for testing..."
-        mysqldump -h "$CLOUD_HOST" -P "$CLOUD_PORT" -u "$CLOUD_USER" -p"$CLOUD_PASS" \
-          --set-gtid-purged=OFF --no-tablespaces --single-transaction --quick --lock-tables=false \
-          "$CLOUD_NAME" > raw_cloud_dump.sql
-
-        sed -E 's/DEFINER=`[^`]+`@`[^`]+`/DEFINER=CURRENT_USER/g' raw_cloud_dump.sql | \
-        sed -E 's/@@GLOBAL\.GTID_PURGED=/\-- @@GLOBAL\.GTID_PURGED=/g' > cloud_dump.sql
-
-        mysql -h 127.0.0.1 -P 3306 -u local_user -plocal_password local_app_db < cloud_dump.sql
-        echo "✅ Temp DB setup complete!"
 
     - name: Start Gunicorn on Temp DB
       run: |
