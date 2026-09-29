@@ -409,7 +409,6 @@ def send_brevo_deposit_alert(
 ):
     url = "https://api.brevo.com/v3/smtp/email"
 
-    # Environment variable / Secrets se key load kar rahe hain
     api_key = os.environ.get("BREVO_API_KEY")
 
     if not api_key:
@@ -417,27 +416,172 @@ def send_brevo_deposit_alert(
             "BREVO_API_KEY environment variable mein set nahi hai."
         )
 
+    # HTML Email Template (Fully Responsive & Clean)
+    html_template = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Deposit Request Alert</title>
+        <style>
+            body {{
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                background-color: #f4f6f9;
+                margin: 0;
+                padding: 0;
+                -webkit-font-smoothing: antialiased;
+            }}
+            .wrapper {{
+                width: 100%;
+                background-color: #f4f6f9;
+                padding: 30px 0;
+            }}
+            .container {{
+                max-width: 550px;
+                margin: 0 auto;
+                background-color: #ffffff;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            }}
+            .header {{
+                background-color: #1a1f2c;
+                color: #ffffff;
+                padding: 24px;
+                text-align: center;
+            }}
+            .header h2 {{
+                margin: 0;
+                font-size: 20px;
+                font-weight: 600;
+                letter-spacing: 0.5px;
+            }}
+            .badge {{
+                display: inline-block;
+                background-color: #f59e0b;
+                color: #ffffff;
+                font-size: 11px;
+                font-weight: bold;
+                text-transform: uppercase;
+                padding: 4px 10px;
+                border-radius: 50px;
+                margin-top: 8px;
+            }}
+            .content {{
+                padding: 24px;
+            }}
+            .amount-card {{
+                background-color: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                padding: 16px;
+                text-align: center;
+                margin-bottom: 24px;
+            }}
+            .amount-title {{
+                font-size: 12px;
+                color: #64748b;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin: 0 0 4px 0;
+            }}
+            .amount-value {{
+                font-size: 28px;
+                font-weight: 700;
+                color: #0f172a;
+                margin: 0;
+            }}
+            .details-table {{
+                width: 100%;
+                border-collapse: collapse;
+            }}
+            .details-table td {{
+                padding: 10px 0;
+                border-bottom: 1px solid #f1f5f9;
+                font-size: 14px;
+            }}
+            .details-table tr:last-child td {{
+                border-bottom: none;
+            }}
+            .label {{
+                color: #64748b;
+                font-weight: 500;
+                width: 40%;
+            }}
+            .value {{
+                color: #0f172a;
+                font-weight: 600;
+                text-align: right;
+                word-break: break-all;
+            }}
+            .footer {{
+                background-color: #f8fafc;
+                padding: 16px;
+                text-align: center;
+                border-top: 1px solid #f1f5f9;
+                font-size: 12px;
+                color: #94a3b8;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="wrapper">
+            <div class="container">
+                <div class="header">
+                    <h2>Deposit Request Received</h2>
+                    <span class="badge">Pending Approval</span>
+                </div>
+                <div class="content">
+                    <div class="amount-card">
+                        <p class="amount-title">Requested Amount</p>
+                        <p class="amount-value">${amount:,.2f}</p>
+                    </div>
+                    <table class="details-table">
+                        <tr>
+                            <td class="label">User Name</td>
+                            <td class="value">{user_name}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">User Email</td>
+                            <td class="value">{user_email}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Sender Name</td>
+                            <td class="value">{sender_name}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Sender Account</td>
+                            <td class="value">{sender_acc}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Transaction ID</td>
+                            <td class="value"><code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">{txn_id}</code></td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="footer">
+                    This is an automated notification from Hadi88 Wallet System.
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
     payload = {
         "sender": {
-            "name": "Deposit Alert System",
-            "email": "no-reply@hadi88.online",  # Verified sender email in Brevo
+            "name": "Hadi88 Wallet System",
+            "email": "no-reply@hadi88.online",
         },
         "to": [
             {
-                "email": "no-reply@hadi88.online",  # Notification receiving email
+                "email": "no-reply@hadi88.online",  # Replace with your actual receiver email (e.g., admin@gmail.com)
                 "name": "Admin",
             }
         ],
-        "subject": f"New Deposit Request Received: ${amount}",
-        "htmlContent": f"""
-            <h3>New Deposit Request Details</h3>
-            <p><strong>User:</strong> {user_name} ({user_email})</p>
-            <p><strong>Amount:</strong> ${amount}</p>
-            <p><strong>Sender Name:</strong> {sender_name}</p>
-            <p><strong>Sender Account:</strong> {sender_acc}</p>
-            <p><strong>Transaction ID:</strong> {txn_id}</p>
-            <p><strong>Status:</strong> Pending</p>
-        """,
+        "subject": f"🔔 New Deposit Request: ${amount:,.2f} from {user_name}",
+        "htmlContent": html_template,
     }
 
     headers = {
@@ -451,7 +595,6 @@ def send_brevo_deposit_alert(
         raise Exception(
             f"Brevo API Error: {response.status_code} - {response.text}"
         )
-
 
 
 
