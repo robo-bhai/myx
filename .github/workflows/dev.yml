@@ -1,0 +1,118 @@
+name: Testing Pipeline (Isolated Temp DB)
+
+on:
+  push:
+    branches: [ "dev", "test", "feature/*" ]
+  pull_request:
+    branches: [ "main", "master", "dev" ]
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: testing-runner-lock
+  cancel-in-progress: true
+
+jobs:
+  run-testing-app:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: local_root_pass
+          MYSQL_DATABASE: local_app_db
+          MYSQL_USER: local_user
+          MYSQL_PASSWORD: local_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    env:
+      BASE_URL: ${{ secrets.BASE_URL }}
+      wallet_topic: ${{ secrets.WALLET_TOPIC }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      HADI_PATH: ${{ secrets.HADI_PATH }}
+      ADMIN_ACCESS_KEY: ${{ secrets.ADMIN_ACCESS_KEY }}
+      ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+      SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY }}
+      FLASK_SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY }}
+      SERVICE_ENC: ${{ secrets.SERVICE_ENC }}
+      Service_w: ${{ secrets.SERVICE_W }}
+      EXCHANGE_API_KEY: ${{ secrets.EXCHANGE_API_KEY }}
+      CLOUDFLARE_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
+      BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+      FLASK_ENV: testing
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+
+    - name: Install System Dependencies & MySQL Client
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y mysql-client
+
+    - name: Install Cloudflared
+      run: |
+        curl -L -o cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+        sudo dpkg -i cloudflared.deb
+
+    - name: Install Python Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flask flask-sqlalchemy flask-login flask-wtf flask-talisman \
+                    flask-limiter requests python-dotenv pymysql cryptography \
+                    xlsxwriter pywebpush urllib3 werkzeug gunicorn Authlib
+
+    - name: Fetch Cloud DB Dump to Local Temp DB
+      env:
+        CLOUD_HOST: ${{ secrets.DB_HOST }}
+        CLOUD_PORT: ${{ secrets.DB_PORT }}
+        CLOUD_USER: ${{ secrets.DB_USER }}
+        CLOUD_PASS: ${{ secrets.MYSQL_PASSWORD }}
+        CLOUD_NAME: ${{ secrets.DB_NAME }}
+      run: |
+        echo "🧪 Downloading fresh read-only schema dump for testing..."
+        mysqldump -h "$CLOUD_HOST" -P "$CLOUD_PORT" -u "$CLOUD_USER" -p"$CLOUD_PASS" \
+          --set-gtid-purged=OFF --no-tablespaces --single-transaction --quick --lock-tables=false \
+          "$CLOUD_NAME" > raw_cloud_dump.sql
+
+        sed -E 's/DEFINER=`[^`]+`@`[^`]+`/DEFINER=CURRENT_USER/g' raw_cloud_dump.sql | \
+        sed -E 's/@@GLOBAL\.GTID_PURGED=/\-- @@GLOBAL\.GTID_PURGED=/g' > cloud_dump.sql
+
+        mysql -h 127.0.0.1 -P 3306 -u local_user -plocal_password local_app_db < cloud_dump.sql
+        echo "✅ Temp DB setup complete!"
+
+    - name: Start Gunicorn on Temp DB
+      run: |
+        echo "🚀 Starting App in Testing Mode on Local DB..."
+        MYSQL_HOST=127.0.0.1 MYSQL_PORT=3306 MYSQL_USER=local_user MYSQL_PASSWORD=local_password MYSQL_DB=local_app_db \
+        nohup gunicorn --workers 5 --threads 2 --timeout 120 --bind 127.0.0.1:5000 app:app > gunicorn.log 2>&1 &
+        sleep 3
+        curl -s http://127.0.0.1:5000/ > /dev/null || (cat gunicorn.log && exit 1)
+
+    - name: Start Cloudflare Tunnel
+      run: |
+        echo "Exposing via Cloudflare Tunnel..."
+        nohup cloudflared tunnel run --token "$CLOUDFLARE_TUNNEL_TOKEN" > cloudflare.log 2>&1 &
+        sleep 5
+        echo "=================================================================="
+        echo "   TESTING APP IS LIVE ON LOCAL TEMP DB (kknn.hadi88.online)      "
+        echo "=================================================================="
+        sleep 17000
+
