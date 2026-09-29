@@ -410,27 +410,36 @@ def send_brevo_deposit_alert(
     url = "https://api.brevo.com/v3/smtp/email"
 
     api_key = os.environ.get("BREVO_API_KEY")
-
     if not api_key:
         raise ValueError(
             "BREVO_API_KEY environment variable mein set nahi hai."
         )
 
-    # HTML Email Template (Fully Responsive & Clean)
+    # Recipients List: Admin + Depositor
+    recipients = [
+        {
+            "email": "no-reply@hadi88.online",  # Admin Email
+            "name": "Admin Support",
+        }
+    ]
+
+    # Agar user ka valid email address available hai, to list me add karein
+    if user_email and "@" in user_email and user_email != "N/A":
+        recipients.append({"email": user_email, "name": user_name})
+
     html_template = f"""
     <!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Deposit Request Alert</title>
+        <title>Deposit Request Confirmation</title>
         <style>
             body {{
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
                 background-color: #f4f6f9;
                 margin: 0;
                 padding: 0;
-                -webkit-font-smoothing: antialiased;
             }}
             .wrapper {{
                 width: 100%;
@@ -455,7 +464,6 @@ def send_brevo_deposit_alert(
                 margin: 0;
                 font-size: 20px;
                 font-weight: 600;
-                letter-spacing: 0.5px;
             }}
             .badge {{
                 display: inline-block;
@@ -483,7 +491,6 @@ def send_brevo_deposit_alert(
                 font-size: 12px;
                 color: #64748b;
                 text-transform: uppercase;
-                letter-spacing: 0.5px;
                 margin: 0 0 4px 0;
             }}
             .amount-value {{
@@ -530,22 +537,18 @@ def send_brevo_deposit_alert(
             <div class="container">
                 <div class="header">
                     <h2>Deposit Request Received</h2>
-                    <span class="badge">Pending Approval</span>
+                    <span class="badge">Pending Verification</span>
                 </div>
                 <div class="content">
+                    <p style="color: #475569; font-size: 14px; margin-top: 0;">Hello <strong>{user_name}</strong>,</p>
+                    <p style="color: #475569; font-size: 14px;">Your deposit request has been submitted successfully and is currently under review. Details are below:</p>
+                    
                     <div class="amount-card">
-                        <p class="amount-title">Requested Amount</p>
+                        <p class="amount-title">Submitted Amount</p>
                         <p class="amount-value">${amount:,.2f}</p>
                     </div>
+
                     <table class="details-table">
-                        <tr>
-                            <td class="label">User Name</td>
-                            <td class="value">{user_name}</td>
-                        </tr>
-                        <tr>
-                            <td class="label">User Email</td>
-                            <td class="value">{user_email}</td>
-                        </tr>
                         <tr>
                             <td class="label">Sender Name</td>
                             <td class="value">{sender_name}</td>
@@ -558,10 +561,14 @@ def send_brevo_deposit_alert(
                             <td class="label">Transaction ID</td>
                             <td class="value"><code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">{txn_id}</code></td>
                         </tr>
+                        <tr>
+                            <td class="label">Status</td>
+                            <td class="value" style="color: #d97706;">Pending</td>
+                        </tr>
                     </table>
                 </div>
                 <div class="footer">
-                    This is an automated notification from Hadi88 Wallet System.
+                    Thank you for choosing Hadi88. If you have any questions, reply to this email.
                 </div>
             </div>
         </div>
@@ -571,16 +578,11 @@ def send_brevo_deposit_alert(
 
     payload = {
         "sender": {
-            "name": "Hadi88 Wallet System",
+            "name": "Hadi88 Support",
             "email": "no-reply@hadi88.online",
         },
-        "to": [
-            {
-                "email": "no-reply@hadi88.online",  # Replace with your actual receiver email (e.g., admin@gmail.com)
-                "name": "Admin",
-            }
-        ],
-        "subject": f"🔔 New Deposit Request: ${amount:,.2f} from {user_name}",
+        "to": recipients,
+        "subject": f"Deposit Request Submitted: ${amount:,.2f} [TXN: {txn_id}]",
         "htmlContent": html_template,
     }
 
@@ -1030,13 +1032,15 @@ def wallet():
             db.session.commit()
 
             # ---------------------------------------------------------
-            # BREVO EMAIL NOTIFICATION TRIGGER
+            # BREVO EMAIL TRIGGER (Admin + Depositor)
             # ---------------------------------------------------------
             try:
                 user_identifier = getattr(current_user, 'name', None) or getattr(current_user, 'username', 'User')
+                user_email = getattr(current_user, 'email', None)
+                
                 send_brevo_deposit_alert(
                     user_name=user_identifier,
-                    user_email=getattr(current_user, 'email', 'N/A'),
+                    user_email=user_email,
                     amount=amount,
                     sender_acc=sender_account,
                     sender_name=sender_name,
@@ -1053,9 +1057,6 @@ def wallet():
             flash("An internal error occurred.", "danger")
         return redirect(url_for('wallet'))
     return render_template('wallet.html', balance=current_user.balance)
-
-
-# ==================== NEW ORDER (DIRECT API) ====================
 
 import uuid
 import time
