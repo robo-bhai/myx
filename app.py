@@ -714,69 +714,194 @@ def home():
 
 # ==================== AUTH ====================
 
+import os
 import threading
-from flask import render_template
-# Email sending functionality (assuming Flask-Mail or SMTP configured)
-from flask_mail import Message # Agar Flask-Mail use kar rahe hain
-# from app import mail # Apka mail object
+import requests
 
-def send_welcome_email_async(app, user_email, user_name):
-    """Background thread mein email send karega taake registration slow na ho."""
-    with app.app_context():
-        try:
-            subject = "🎉 Welcome to Our Platform! Your Journey Begins Here"
-            
-            # HTML Template Body (Professional & Attractive)
-            html_content = f"""
-            <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #121212; color: #e0e0e0; border-radius: 12px; padding: 24px; border: 1px solid #2a2a2a;">
-                <div style="text-align: center; padding-bottom: 20px; border-bottom: 1px solid #2a2a2a;">
-                    <h1 style="color: #FFD700; margin: 0; font-size: 26px;">Welcome Onboard, {user_name}! 👋</h1>
+
+def send_brevo_welcome_email(user_email, user_name):
+    """
+    Brevo API (v3) ke zariye asynchronous welcome email bhejta hai.
+    """
+    url = "https://api.brevo.com/v3/smtp/email"
+    api_key = os.environ.get("BREVO_API_KEY")
+
+    if not api_key:
+        raise ValueError("BREVO_API_KEY environment variable set nahi hai.")
+
+    if not user_email or "@" not in user_email or user_email == "N/A":
+        return  # Email valid nahi hai to process skip kar dein
+
+    # HTML Email Template (Hadi88 Dark Theme)
+    html_template = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Welcome to Hadi88</title>
+        <style>
+            body {{
+                font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                background-color: #0d0d0d;
+                margin: 0;
+                padding: 0;
+                color: #e0e0e0;
+            }}
+            .wrapper {{
+                width: 100%;
+                background-color: #0d0d0d;
+                padding: 40px 0;
+            }}
+            .container {{
+                max-width: 600px;
+                margin: 0 auto;
+                background-color: #121212;
+                border-radius: 12px;
+                overflow: hidden;
+                border: 1px solid #2a2a2a;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            }}
+            .header {{
+                text-align: center;
+                padding: 30px 24px 20px 24px;
+                border-bottom: 1px solid #2a2a2a;
+                background: linear-gradient(180deg, #181818 0%, #121212 100%);
+            }}
+            .brand-name {{
+                color: #FFD700;
+                margin: 0;
+                font-size: 32px;
+                font-weight: 800;
+                letter-spacing: 1.5px;
+            }}
+            .brand-tagline {{
+                color: #888888;
+                font-size: 12px;
+                margin: 6px 0 0 0;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+            }}
+            .content {{
+                padding: 30px 24px;
+                line-height: 1.6;
+            }}
+            .welcome-title {{
+                color: #ffffff;
+                font-size: 22px;
+                margin-top: 0;
+                font-weight: 600;
+            }}
+            .tip-card {{
+                background-color: #1e1e1e;
+                border-left: 4px solid #FFD700;
+                padding: 16px;
+                border-radius: 6px;
+                margin: 24px 0;
+            }}
+            .btn-container {{
+                text-align: center;
+                margin: 32px 0 16px 0;
+            }}
+            .btn-primary {{
+                background: linear-gradient(135deg, #FFD700, #ffa500);
+                color: #000000;
+                text-decoration: none;
+                padding: 14px 34px;
+                font-weight: 700;
+                border-radius: 8px;
+                font-size: 15px;
+                display: inline-block;
+                box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+            }}
+            .footer {{
+                text-align: center;
+                border-top: 1px solid #2a2a2a;
+                padding: 20px 24px;
+                font-size: 12px;
+                color: #777777;
+                background-color: #0f0f0f;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="wrapper">
+            <div class="container">
+                
+                <!-- Brand Header -->
+                <div class="header">
+                    <h1 class="brand-name">HADI88</h1>
+                    <p class="brand-tagline">Powering the Next Generation of Digital Influence</p>
                 </div>
                 
-                <div style="padding: 20px 0; line-height: 1.6;">
-                    <p style="font-size: 16px;">We are super excited to have you join us!</p>
-                    <p style="font-size: 15px; color: #b0b0b0;">Your account is fully set up and ready to go. Explore your dashboard to unlock all powerful tools and features tailored just for you.</p>
+                <!-- Main Body -->
+                <div class="content">
+                    <h2 class="welcome-title">Welcome Onboard, {user_name}! 👋</h2>
+                    <p style="font-size: 15px; color: #b0b0b0; margin-top: 0;">
+                        We are super excited to have you join us! Your account is fully activated and ready to go.
+                    </p>
+                    <p style="font-size: 15px; color: #b0b0b0;">
+                        Explore your dashboard to access high-speed SMM services, track order analytics, and automate your social growth effortlessly.
+                    </p>
                     
-                    <div style="background-color: #1e1e1e; border-left: 4px solid #FFD700; padding: 15px; border-radius: 6px; margin: 20px 0;">
-                        <p style="margin: 0; color: #FFD700; font-weight: bold;">💡 Quick Tip:</p>
-                        <p style="margin: 5px 0 0 0; font-size: 14px; color: #d0d0d0;">Share your unique referral link with your friends to earn rewards together!</p>
+                    <!-- Tip Box -->
+                    <div class="tip-card">
+                        <p style="margin: 0; color: #FFD700; font-weight: bold; font-size: 14px;">💡 Quick Tip:</p>
+                        <p style="margin: 4px 0 0 0; font-size: 14px; color: #d0d0d0;">
+                            Share your unique referral link with your network and earn passive commission on every order!
+                        </p>
                     </div>
 
-                    <div style="text-align: center; margin-top: 30px;">
-                        <a href="#" style="background: linear-gradient(135deg, #FFD700, #ffa500); color: #000; text-decoration: none; padding: 12px 30px; font-weight: bold; border-radius: 8px; font-size: 15px; display: inline-block;">Go to Dashboard</a>
+                    <!-- CTA Button -->
+                    <div class="btn-container">
+                        <a href="https://hadi88.online/dashboard" class="btn-primary">Go to Dashboard</a>
                     </div>
                 </div>
 
-                <div style="text-align: center; border-top: 1px solid #2a2a2a; padding-top: 20px; font-size: 12px; color: #777;">
-                    <p style="margin: 0;">If you have any questions, reply directly to this email. We're here to help!</p>
+                <!-- Footer -->
+                <div class="footer">
+                    <p style="margin: 0 0 6px 0;">Need technical support or custom API integration?</p>
+                    <p style="margin: 0;">Reply directly to this email or contact our 24/7 Hadi88 Support Desk.</p>
                 </div>
+
             </div>
-            """
+        </div>
+    </body>
+    </html>
+    """
 
-            # Flask-Mail Sending Logic
-            # msg = Message(subject=subject, recipients=[user_email], html=html_content)
-            # mail.send(msg)
+    payload = {
+        "sender": {
+            "name": "Hadi88 Support",
+            "email": "no-reply@hadi88.online",  # Apna verified Brevo sender email yahan likhein
+        },
+        "to": [{"email": user_email, "name": user_name}],
+        "subject": "🎉 Welcome to Hadi88 | Elevate Your Digital Footprint",
+        "htmlContent": html_template,
+    }
 
-            # Debug Log (Testing ke liye)
-            app.logger.info(f"Welcome email successfully queued/sent to {user_email}")
+    headers = {
+        "accept": "application/json",
+        "api-key": api_key,
+        "content-type": "application/json",
+    }
 
-        except Exception as e:
-            app.logger.error(f"Failed to send welcome email to {user_email}: {str(e)}")
+    response = requests.post(url, json=payload, headers=headers)
+    if response.status_code not in [200, 201, 202]:
+        raise Exception(
+            f"Brevo Welcome Email Error: {response.status_code} - {response.text}"
+        )
 
 
 def trigger_welcome_message(user):
-    """Route se call hone wala simple wrapper wrapper (Threaded execution)"""
-    from flask import current_app
-    app = current_app._get_current_object()
-    
-    # Threading use ki hai taake email sending ki waja se user ka registration response wait na kare
+    """
+    Route se call hone wala background wrapper.
+    Threading use ki gayi hai taake user registration delay na ho.
+    """
     threading.Thread(
-        target=send_welcome_email_async, 
-        args=(app, user.email, user.name)
+        target=send_brevo_welcome_email, 
+        args=(user.email, user.name)
     ).start()
-
-
-
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -841,7 +966,7 @@ def register():
             db.session.commit()
             session.pop('ref', None)
 
-            # Send Welcome Message asynchronously via Helper
+            # Send Welcome Email via Brevo asynchronously (Threaded execution)
             trigger_welcome_message(user)
 
             login_user(user, remember=True)
@@ -854,6 +979,9 @@ def register():
             flash('Internal error during registration.', 'danger')
 
     return render_template('register.html', captcha_img=generate_captcha_data())
+
+
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
