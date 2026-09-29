@@ -398,6 +398,63 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+
+
+import os
+import requests
+
+
+def send_brevo_deposit_alert(
+    user_name, user_email, amount, sender_acc, sender_name, txn_id
+):
+    url = "https://api.brevo.com/v3/smtp/email"
+
+    # Environment variable / Secrets se key load kar rahe hain
+    api_key = os.environ.get("BREVO_API_KEY")
+
+    if not api_key:
+        raise ValueError(
+            "BREVO_API_KEY environment variable mein set nahi hai."
+        )
+
+    payload = {
+        "sender": {
+            "name": "Deposit Alert System",
+            "email": "no-reply@hadi88.online",  # Verified sender email in Brevo
+        },
+        "to": [
+            {
+                "email": "no-reply@hadi88.online",  # Notification receiving email
+                "name": "Admin",
+            }
+        ],
+        "subject": f"New Deposit Request Received: ${amount}",
+        "htmlContent": f"""
+            <h3>New Deposit Request Details</h3>
+            <p><strong>User:</strong> {user_name} ({user_email})</p>
+            <p><strong>Amount:</strong> ${amount}</p>
+            <p><strong>Sender Name:</strong> {sender_name}</p>
+            <p><strong>Sender Account:</strong> {sender_acc}</p>
+            <p><strong>Transaction ID:</strong> {txn_id}</p>
+            <p><strong>Status:</strong> Pending</p>
+        """,
+    }
+
+    headers = {
+        "accept": "application/json",
+        "api-key": api_key,
+        "content-type": "application/json",
+    }
+
+    response = requests.post(url, json=payload, headers=headers)
+    if response.status_code not in [200, 201, 202]:
+        raise Exception(
+            f"Brevo API Error: {response.status_code} - {response.text}"
+        )
+
+
+
+
 def sync_exchange_rates():
     try:
         response = requests.get(EXCHANGE_URL, timeout=10)
@@ -794,7 +851,6 @@ def send_ntfy_deposit_alert(user_name, user_email, amount, sender_acc, sender_na
         app.logger.error(f"Failed to send ntfy notification: {e}", exc_info=True)
 
 
-
 @app.route('/wallet', methods=['GET', 'POST'])
 @login_required
 def wallet():
@@ -831,11 +887,11 @@ def wallet():
             db.session.commit()
 
             # ---------------------------------------------------------
-            # NTFY NOTIFICATION TRIGGER
+            # BREVO EMAIL NOTIFICATION TRIGGER
             # ---------------------------------------------------------
             try:
                 user_identifier = getattr(current_user, 'name', None) or getattr(current_user, 'username', 'User')
-                send_ntfy_deposit_alert(
+                send_brevo_deposit_alert(
                     user_name=user_identifier,
                     user_email=getattr(current_user, 'email', 'N/A'),
                     amount=amount,
@@ -843,8 +899,8 @@ def wallet():
                     sender_name=sender_name,
                     txn_id=transaction_id
                 )
-            except Exception as ntfy_err:
-                app.logger.error(f"Ntfy trigger error: {ntfy_err}")
+            except Exception as brevo_err:
+                app.logger.error(f"Brevo trigger error: {brevo_err}")
             # ---------------------------------------------------------
 
             flash("Deposit request submitted successfully.", "success")
