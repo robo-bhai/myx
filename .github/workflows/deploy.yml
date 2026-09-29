@@ -102,6 +102,14 @@ jobs:
                     flask-limiter requests python-dotenv pymysql cryptography \
                     xlsxwriter pywebpush urllib3 werkzeug gunicorn Authlib
 
+    # ---------------------------------------------------------
+    # NEW STEP: DB Dump & Restore se Pehle Cloud Sync Run Hoga
+    # ---------------------------------------------------------
+    - name: Run Sync DB Script (Schema Migration)
+      run: |
+        echo "🔄 Running DB Sync script on Cloud MySQL..."
+        python sync_db.py
+
     - name: Restore Local DB Cache
       id: db-cache
       uses: actions/cache/restore@v4
