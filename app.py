@@ -1843,6 +1843,221 @@ def hadi_dashboard():
 
 # ==================== OTHER ADMIN ROUTES ====================
 
+import os
+import requests
+
+
+def send_brevo_deposit_status_email(
+    user_email, user_name, amount, txn_id, status, reason=None
+):
+    url = "https://api.brevo.com/v3/smtp/email"
+    api_key = os.environ.get("BREVO_API_KEY")
+
+    if not api_key:
+        raise ValueError(
+            "BREVO_API_KEY environment variable mein set nahi hai."
+        )
+
+    if not user_email or "@" not in user_email or user_email == "N/A":
+        return  # Email unavailable, skip sending
+
+    is_approved = status.lower() == "approved"
+
+    # Status-specific UI theme
+    theme_color = "#10b981" if is_approved else "#ef4444"
+    status_title = (
+        "Deposit Approved!" if is_approved else "Deposit Request Declined"
+    )
+    status_badge = "APPROVED" if is_approved else "REJECTED"
+    message_text = (
+        f"Great news! Your deposit of <strong>${amount:,.2f}</strong> has been verified and added to your wallet balance."
+        if is_approved
+        else f"Unfortunately, your deposit request of <strong>${amount:,.2f}</strong> was declined. If you think this was a mistake, please contact support."
+    )
+
+    reason_row = ""
+    if not is_approved and reason:
+        reason_row = f"""
+        <tr>
+            <td class="label">Reason</td>
+            <td class="value" style="color: #ef4444;">{reason}</td>
+        </tr>
+        """
+
+    html_template = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{status_title}</title>
+        <style>
+            body {{
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                background-color: #f4f6f9;
+                margin: 0;
+                padding: 0;
+            }}
+            .wrapper {{
+                width: 100%;
+                background-color: #f4f6f9;
+                padding: 30px 0;
+            }}
+            .container {{
+                max-width: 550px;
+                margin: 0 auto;
+                background-color: #ffffff;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            }}
+            .header {{
+                background-color: #1a1f2c;
+                color: #ffffff;
+                padding: 24px;
+                text-align: center;
+            }}
+            .header h2 {{
+                margin: 0;
+                font-size: 20px;
+                font-weight: 600;
+            }}
+            .badge {{
+                display: inline-block;
+                background-color: {theme_color};
+                color: #ffffff;
+                font-size: 11px;
+                font-weight: bold;
+                text-transform: uppercase;
+                padding: 4px 10px;
+                border-radius: 50px;
+                margin-top: 8px;
+            }}
+            .content {{
+                padding: 24px;
+            }}
+            .amount-card {{
+                background-color: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                padding: 16px;
+                text-align: center;
+                margin-bottom: 24px;
+            }}
+            .amount-title {{
+                font-size: 12px;
+                color: #64748b;
+                text-transform: uppercase;
+                margin: 0 0 4px 0;
+            }}
+            .amount-value {{
+                font-size: 28px;
+                font-weight: 700;
+                color: #0f172a;
+                margin: 0;
+            }}
+            .details-table {{
+                width: 100%;
+                border-collapse: collapse;
+            }}
+            .details-table td {{
+                padding: 10px 0;
+                border-bottom: 1px solid #f1f5f9;
+                font-size: 14px;
+            }}
+            .details-table tr:last-child td {{
+                border-bottom: none;
+            }}
+            .label {{
+                color: #64748b;
+                font-weight: 500;
+                width: 40%;
+            }}
+            .value {{
+                color: #0f172a;
+                font-weight: 600;
+                text-align: right;
+                word-break: break-all;
+            }}
+            .footer {{
+                background-color: #f8fafc;
+                padding: 16px;
+                text-align: center;
+                border-top: 1px solid #f1f5f9;
+                font-size: 12px;
+                color: #94a3b8;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="wrapper">
+            <div class="container">
+                <div class="header">
+                    <h2>{status_title}</h2>
+                    <span class="badge">{status_badge}</span>
+                </div>
+                <div class="content">
+                    <p style="color: #475569; font-size: 14px; margin-top: 0;">Hello <strong>{user_name}</strong>,</p>
+                    <p style="color: #475569; font-size: 14px; line-height: 1.5;">{message_text}</p>
+                    
+                    <div class="amount-card">
+                        <p class="amount-title">Deposit Amount</p>
+                        <p class="amount-value">${amount:,.2f}</p>
+                    </div>
+
+                    <table class="details-table">
+                        <tr>
+                            <td class="label">Transaction ID</td>
+                            <td class="value"><code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">{txn_id}</code></td>
+                        </tr>
+                        <tr>
+                            <td class="label">Status</td>
+                            <td class="value" style="color: {theme_color};">{status_badge}</td>
+                        </tr>
+                        {reason_row}
+                    </table>
+                </div>
+                <div class="footer">
+                    Thank you for using Hadi88. Need help? Reply directly to this email.
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    subject = (
+        f"✅ Deposit Approved: ${amount:,.2f}"
+        if is_approved
+        else f"❌ Deposit Request Rejected: ${amount:,.2f}"
+    )
+
+    payload = {
+        "sender": {
+            "name": "Hadi88 Support",
+            "email": "no-reply@hadi88.online",
+        },
+        "to": [{"email": user_email, "name": user_name}],
+        "subject": subject,
+        "htmlContent": html_template,
+    }
+
+    headers = {
+        "accept": "application/json",
+        "api-key": api_key,
+        "content-type": "application/json",
+    }
+
+    response = requests.post(url, json=payload, headers=headers)
+    if response.status_code not in [200, 201, 202]:
+        raise Exception(
+            f"Brevo Status Email Error: {response.status_code} - {response.text}"
+        )
+
+
+
+
+
 @app.route('/admin/deposits')
 @login_required
 @admin_required
@@ -1860,29 +2075,59 @@ def update_deposit_status(deposit_id, action):
     if deposit.status != 'pending':
         flash("This deposit has already been processed.", "warning")
         return redirect(url_for('admin_deposits'))
+    
     try:
+        user = User.query.filter_by(id=deposit.user_id).with_for_update().first()
+        if not user:
+            flash("Associated user not found.", "danger")
+            return redirect(url_for('admin_deposits'))
+
         if action == "approve":
-            user = User.query.filter_by(id=deposit.user_id).with_for_update().first()
-            if user:
-                deposit.status = "approved"
-                user.balance += deposit.amount
-                db.session.add(Transaction(user_id=user.id, amount=deposit.amount, type='deposit'))
-                if user.referred_by:
-                    referrer = User.query.filter_by(id=user.referred_by).with_for_update().first()
-                    if referrer:
-                        bonus = round(deposit.amount * 0.05, 2)
-                        referrer.balance += bonus
-                        db.session.add(Transaction(user_id=referrer.id, amount=bonus, type='ref_bonus'))
+            deposit.status = "approved"
+            user.balance += deposit.amount
+            db.session.add(Transaction(user_id=user.id, amount=deposit.amount, type='deposit'))
+            
+            if user.referred_by:
+                referrer = User.query.filter_by(id=user.referred_by).with_for_update().first()
+                if referrer:
+                    bonus = round(deposit.amount * 0.05, 2)
+                    referrer.balance += bonus
+                    db.session.add(Transaction(user_id=referrer.id, amount=bonus, type='ref_bonus'))
+            
             flash(f"Deposit {deposit_id} approved.", "success")
+
         elif action == "reject":
             deposit.status = "rejected"
             flash(f"Deposit {deposit_id} rejected.", "info")
+
+        # Database save
         db.session.commit()
+
+        # ---------------------------------------------------------
+        # BREVO USER STATUS EMAIL TRIGGER
+        # ---------------------------------------------------------
+        try:
+            user_identifier = getattr(user, 'name', None) or getattr(user, 'username', 'User')
+            user_email = getattr(user, 'email', None)
+
+            send_brevo_deposit_status_email(
+                user_email=user_email,
+                user_name=user_identifier,
+                amount=deposit.amount,
+                txn_id=deposit.transaction_id,
+                status=deposit.status
+            )
+        except Exception as brevo_err:
+            app.logger.error(f"Brevo deposit status email error: {brevo_err}")
+        # ---------------------------------------------------------
+
     except Exception as e:
         db.session.rollback()
         app.logger.error(f"Admin Deposit Error: {str(e)}")
         flash("System error updating deposit.", "danger")
+
     return redirect(url_for('admin_deposits'))
+
 
 @app.route('/admin/users')
 @login_required
